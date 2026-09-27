@@ -6,7 +6,12 @@
   "homepage": "./",
   "scripts": {
     "start": "electron . --prod --no-sandbox --disable-gpu",
-    "dev": "electron . --prod --no-sandbox --disable-gpu"
+    "dev": "electron . --prod --no-sandbox --disable-gpu",
+    "build": "electron-builder",
+    "build:linux": "electron-builder --linux",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:all": "electron-builder -mwl"
   },
   "author": "Lead Wave",
   "license": "MIT",
@@ -65,7 +70,67 @@
     "yauzl": "^3.2.0"
   },
   "devDependencies": {
-    "electron": "^30.5.1"
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.leadwave.desktop",
+    "productName": "Lead Wave",
+    "copyright": "Copyright © 2026 Lead Wave",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "build/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**",
+      "**/node_modules/sharp/**"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/logo512.png",
+      "category": "Utility",
+      "maintainer": "Lead Wave <support@leadwave.io>"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/favicon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/logo512.png",
+      "category": "public.app-category.business"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Lead Wave"
+    }
   },
   "browserslist": {
     "production": [

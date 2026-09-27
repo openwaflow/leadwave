@@ -1,0 +1,21 @@
+{
+  "RESELLER_CODE": null,
+  "RESELLER_INFO": {
+    "name": "Lead Wave",
+    "logo": null,
+    "website": null,
+    "support_email": null,
+    "support_phone": null
+  },
+  "LICENSE_SERVER": {
+    "base_url": "https://license.getleadwave.in",
+    "api_version": "api"
+  },
+  "APP_BRANDING": {
+    "show_reseller_info": false,
+    "custom_title": "Lead Wave",
+    "splash_message": ""
+  },
+  "MASTER_ACCOUNT_MODE": true,
+  "MASTER_ACCOUNT_ID": null
+}

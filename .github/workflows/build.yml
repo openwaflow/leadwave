@@ -11,129 +11,142 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: Linux
-            command: npm run build:linux
-          - os: windows-latest
-            target: Windows
-            command: npm run build:win
-          - os: macos-latest
-            target: macOS
-            command: npm run build:mac
-
+  build-linux:
+    name: Build ubuntu-latest (Linux)
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      # Linux: Install system dependencies for native modules
-      - name: Install Linux system dependencies
-        if: runner.os == 'Linux'
+      - name: Install system dependencies
         run: |
           sudo apt-get update -y
           sudo apt-get install -y \
-            libnss3-dev \
-            libatk-bridge2.0-dev \
-            libdrm-dev \
-            libxcomposite-dev \
-            libxdamage-dev \
-            libxrandr-dev \
-            libgbm-dev \
-            libxkbcommon-dev \
-            libpango1.0-dev \
-            libcairo2-dev \
-            libasound2-dev \
-            libx11-xcb-dev \
+            libsecret-1-dev \
             rpm \
             fakeroot \
-            python3
+            dpkg \
+            build-essential \
+            python3 \
+            python3-pip \
+            libnss3-dev \
+            libgtk-3-dev \
+            libxss1 \
+            libasound2-dev
 
-      # macOS: Install python for node-gyp
-      - name: Setup Python (macOS)
-        if: runner.os == 'macOS'
-        run: brew install python-setuptools || true
-
-      # Windows: Install python for node-gyp
-      - name: Setup Python (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Dependencies
-        run: npm install --prefer-offline
+      - name: Install npm dependencies
+        run: npm install
         env:
-          npm_config_build_from_source: true
+          npm_config_python: python3
 
-      - name: Rebuild Native Modules for Electron
+      - name: Rebuild native modules
         run: npx @electron/rebuild --force
         env:
-          npm_config_build_from_source: true
+          npm_config_python: python3
 
-      - name: Build Application Package
-        run: ${{ matrix.command }}
+      - name: Build Linux
+        run: npm run build:linux
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS code signing (optional - skip if no cert)
-          CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: Upload Build Artifacts (Linux)
-        if: runner.os == 'Linux'
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: leadwave-Linux
           path: |
             dist/*.AppImage
             dist/*.deb
-            dist/*.rpm
           retention-days: 14
           if-no-files-found: warn
 
-      - name: Upload Build Artifacts (Windows)
-        if: runner.os == 'Windows'
+  build-windows:
+    name: Build windows-latest (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        run: npm install
+        shell: cmd
+
+      - name: Rebuild native modules
+        run: npx @electron/rebuild --force
+        shell: cmd
+
+      - name: Build Windows
+        run: npm run build:win
+        shell: cmd
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: leadwave-Windows
           path: |
             dist/*.exe
-            dist/nsis-web/*.exe
           retention-days: 14
           if-no-files-found: warn
 
-      - name: Upload Build Artifacts (macOS)
-        if: runner.os == 'macOS'
+  build-macos:
+    name: Build macos-latest (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Rebuild native modules
+        run: npx @electron/rebuild --force
+
+      - name: Build macOS
+        run: npm run build:mac
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
           name: leadwave-macOS
           path: |
             dist/*.dmg
             dist/*.zip
-            dist/*.pkg
           retention-days: 14
           if-no-files-found: warn
 
-      - name: Release to GitHub Releases (Tags only)
-        if: startsWith(github.ref, 'refs/tags/')
+  release:
+    name: Create Release
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.exe
-            dist/*.dmg
-            dist/*.zip
+            leadwave-Linux/*.AppImage
+            leadwave-Linux/*.deb
+            leadwave-Windows/*.exe
+            leadwave-macOS/*.dmg
+            leadwave-macOS/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

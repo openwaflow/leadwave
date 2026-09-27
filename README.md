@@ -32,14 +32,26 @@ npm install
 npm start
 ```
 
-## Packaging & Distribution
+## Packaging & Multi-Platform Desktop Builds
 
-To package the application for your operating system:
+To package native desktop executables for each operating system:
 
 ```bash
-# Build desktop executable (configured via electron-builder)
-npm run build
+# Build for Linux (.AppImage and .deb installer)
+npm run build:linux
+
+# Build for Windows (.exe NSIS Installer and Portable .exe)
+npm run build:win
+
+# Build for macOS (.dmg and .zip)
+npm run build:mac
+
+# Build for all platforms at once
+npm run build:all
 ```
+
+### Automated Cloud Builds (GitHub Actions CI/CD)
+Whenever you push code to GitHub (`main` branch) or create a new release tag (`v*`), the included GitHub Actions workflow automatically builds all 3 platforms (Ubuntu Linux, Windows, and macOS) on dedicated cloud runners and generates the download artifacts.
 
 ## License
 

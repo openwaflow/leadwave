@@ -7,103 +7,135 @@ export default function StatsOverview({ stats, loading, isReseller }) {
 
   const adminCards = [
     {
-      title: 'Total Revenue',
+      title: 'Total Gross Revenue',
       value: fmt(stats?.total_revenue, currency),
-      sub: `${fmt(stats?.month_revenue, currency)} this month`,
+      sub: `${fmt(stats?.month_revenue, currency)} earned this month`,
+      badge: 'All Time',
+      badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
       icon: '💰',
-      glow: 'rgba(16,185,129,0.15)',
-      border: 'rgba(16,185,129,0.3)',
-      color: '#34d399'
+      glow: 'from-emerald-500/20 via-teal-500/5 to-transparent',
+      borderColor: 'border-emerald-500/25',
+      valueColor: 'text-emerald-400'
     },
     {
-      title: 'Active Licenses',
+      title: 'Active Paid Licenses',
       value: stats?.active ?? 0,
-      sub: `${stats?.total ?? 0} total issued`,
-      icon: '✅',
-      glow: 'rgba(6,182,212,0.1)',
-      border: 'rgba(6,182,212,0.25)',
-      color: '#22d3ee'
+      sub: `${stats?.total ?? 0} total lifetime issued`,
+      badge: `${stats?.total ? Math.round(((stats.active || 0) / stats.total) * 100) : 0}% Active`,
+      badgeColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+      icon: '🔑',
+      glow: 'from-cyan-500/20 via-blue-500/5 to-transparent',
+      borderColor: 'border-cyan-500/25',
+      valueColor: 'text-cyan-400'
     },
     {
-      title: 'Expired / Inactive',
-      value: stats?.expired ?? 0,
-      sub: `${stats?.suspended ?? 0} suspended`,
-      icon: '⚠️',
-      glow: 'rgba(239,68,68,0.1)',
-      border: 'rgba(239,68,68,0.25)',
-      color: '#f87171'
+      title: '2-Day Free Trials',
+      value: stats?.trials ?? (stats?.total_trials ?? 0),
+      sub: `${stats?.active_trials ?? 0} active now • auto-activated`,
+      badge: 'Zero Friction',
+      badgeColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+      icon: '🆓',
+      glow: 'from-amber-500/20 via-orange-500/5 to-transparent',
+      borderColor: 'border-amber-500/25',
+      valueColor: 'text-amber-400'
     },
     {
-      title: 'Active Resellers',
+      title: 'Reseller Network',
       value: stats?.total_resellers ?? 0,
-      sub: `${fmt(stats?.pending_commission, currency)} commission pending`,
+      sub: `${fmt(stats?.pending_commission, currency)} pending payout`,
+      badge: 'Partners',
+      badgeColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
       icon: '🏪',
-      glow: 'rgba(99,102,241,0.1)',
-      border: 'rgba(99,102,241,0.25)',
-      color: '#818cf8'
+      glow: 'from-indigo-500/20 via-purple-500/5 to-transparent',
+      borderColor: 'border-indigo-500/25',
+      valueColor: 'text-indigo-400'
     }
   ];
 
   const resellerCards = [
     {
-      title: 'My Total Sales',
+      title: 'My Total Client Sales',
       value: fmt(stats?.total_sales, currency),
       sub: `${fmt(stats?.month_sales, currency)} this month`,
+      badge: 'Gross Sales',
+      badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
       icon: '💰',
-      glow: 'rgba(16,185,129,0.15)',
-      border: 'rgba(16,185,129,0.3)',
-      color: '#34d399'
+      glow: 'from-emerald-500/20 to-transparent',
+      borderColor: 'border-emerald-500/25',
+      valueColor: 'text-emerald-400'
     },
     {
-      title: 'Total Commission',
+      title: 'Earned Commission',
       value: fmt(stats?.total_commission, currency),
-      sub: `${fmt(stats?.pending_balance, currency)} pending payout`,
+      sub: `${fmt(stats?.pending_balance, currency)} ready for payout`,
+      badge: 'My Earnings',
+      badgeColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
       icon: '🎯',
-      glow: 'rgba(99,102,241,0.12)',
-      border: 'rgba(99,102,241,0.3)',
-      color: '#818cf8'
+      glow: 'from-indigo-500/20 to-transparent',
+      borderColor: 'border-indigo-500/25',
+      valueColor: 'text-indigo-400'
     },
     {
-      title: 'Active Licenses',
+      title: 'Active Clients',
       value: stats?.active ?? 0,
-      sub: `${stats?.total ?? 0} total generated`,
-      icon: '✅',
-      glow: 'rgba(6,182,212,0.1)',
-      border: 'rgba(6,182,212,0.25)',
-      color: '#22d3ee'
+      sub: `${stats?.total ?? 0} total licenses sold`,
+      badge: 'Active Now',
+      badgeColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+      icon: '🔑',
+      glow: 'from-cyan-500/20 to-transparent',
+      borderColor: 'border-cyan-500/25',
+      valueColor: 'text-cyan-400'
     },
     {
-      title: 'Expired / Inactive',
+      title: 'Need Renewal',
       value: stats?.expired ?? 0,
-      sub: 'Need renewal',
+      sub: 'Clients due for subscription renewal',
+      badge: 'Renewals',
+      badgeColor: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
       icon: '⏰',
-      glow: 'rgba(245,158,11,0.1)',
-      border: 'rgba(245,158,11,0.25)',
-      color: '#fbbf24'
+      glow: 'from-amber-500/20 to-transparent',
+      borderColor: 'border-amber-500/25',
+      valueColor: 'text-amber-400'
     }
   ];
 
   const cards = isReseller ? resellerCards : adminCards;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
       {cards.map((c, i) => (
-        <div key={i} style={{
-          background: `radial-gradient(circle at top left, ${c.glow}, transparent 70%), rgba(15,23,42,0.7)`,
-          border: `1px solid ${c.border}`,
-          borderRadius: '16px',
-          padding: '20px 24px',
-          backdropFilter: 'blur(12px)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>{c.title}</p>
-              <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#fff', margin: '8px 0 4px', fontFamily: 'monospace' }}>
-                {loading ? <span style={{ display: 'inline-block', width: '80px', height: '28px', background: '#1e293b', borderRadius: '6px', animation: 'pulse 1s infinite' }}></span> : c.value}
-              </h3>
-              <p style={{ fontSize: '12px', color: '#475569', margin: 0 }}>{loading ? '' : c.sub}</p>
+        <div
+          key={i}
+          className={`glass-panel p-5 sm:p-6 border relative overflow-hidden group ${c.borderColor}`}
+        >
+          {/* Ambient Corner Glow */}
+          <div className={`absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br ${c.glow} rounded-full blur-2xl pointer-events-none group-hover:scale-125 transition-transform duration-500`}></div>
+
+          <div className="flex items-start justify-between mb-3 relative z-10">
+            <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+              {c.title}
+            </span>
+            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${c.badgeColor}`}>
+              {c.badge}
+            </span>
+          </div>
+
+          <div className="flex items-baseline justify-between relative z-10">
+            <div className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${c.valueColor}`}>
+              {loading ? (
+                <span className="inline-block w-20 h-7 bg-slate-800 animate-pulse rounded"></span>
+              ) : (
+                c.value
+              )}
             </div>
-            <span style={{ fontSize: '28px', filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.1))' }}>{c.icon}</span>
+            <span className="text-2xl p-2 rounded-xl bg-slate-900/60 border border-white/5">
+              {c.icon}
+            </span>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-slate-800/60 text-xs text-slate-400 flex items-center justify-between relative z-10">
+            <span>{c.sub}</span>
+            <span className="text-slate-600 group-hover:text-slate-400 transition-colors">↗</span>
           </div>
         </div>
       ))}

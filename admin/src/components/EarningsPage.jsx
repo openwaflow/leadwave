@@ -4,169 +4,358 @@ import { api } from '../services/api';
 const fmt = (n, cur = '₹') => `${cur}${(parseFloat(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
 export default function EarningsPage({ isReseller }) {
-  const [data, setData]         = useState({ earnings: [], summary: { total: 0, commission: 0, net: 0, count: 0 } });
-  const [loading, setLoading]   = useState(true);
-  const [period, setPeriod]     = useState('month');
+  const [data, setData]           = useState({ earnings: [], summary: { total: 0, commission: 0, net: 0, count: 0 } });
+  const [loading, setLoading]     = useState(true);
+  const [period, setPeriod]       = useState('month');
   const [resellers, setResellers] = useState([]);
   const [filterRes, setFilterRes] = useState('');
-  const [search, setSearch]     = useState('');
-  const [page, setPage]         = useState(1);
-  const PAGE_SIZE = 20;
+  const [search, setSearch]       = useState('');
+  const [page, setPage]           = useState(1);
+  const PAGE_SIZE = 25;
 
-  const load = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
       const res = isReseller
         ? await api.listTransactions('', period)
         : await api.getEarnings(period, filterRes);
       if (res?.success) setData(res);
-    } catch(e) {}
+    } catch (e) {
+      console.error('Error loading earnings:', e);
+    }
     setLoading(false);
   };
 
   const loadResellers = async () => {
     if (isReseller) return;
-    const res = await api.listResellers();
-    if (res?.success) setResellers(res.resellers || []);
+    try {
+      const res = await api.listResellers();
+      if (res?.success) setResellers(res.resellers || []);
+    } catch (e) {}
   };
 
-  useEffect(() => { loadResellers(); }, []);
-  useEffect(() => { load(); setPage(1); }, [period, filterRes]);
+  useEffect(() => { loadResellers(); }, [isReseller]);
+  useEffect(() => { loadData(); setPage(1); }, [period, filterRes]);
 
   const currency   = data?.summary?.currency || '₹';
-  const filtered   = (data?.earnings || []).filter(e => !search || (e.customer_name||'').toLowerCase().includes(search.toLowerCase()) || (e.reseller_name||'').toLowerCase().includes(search.toLowerCase()) || (e.license_key||'').toLowerCase().includes(search.toLowerCase()));
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const rawList    = data?.earnings || [];
+  const filtered   = rawList.filter((e) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return (
+      (e.customer_name || '').toLowerCase().includes(s) ||
+      (e.reseller_name || '').toLowerCase().includes(s) ||
+      (e.license_key || '').toLowerCase().includes(s) ||
+      (e.plan_type || '').toLowerCase().includes(s)
+    );
+  });
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const periodBtns = [
     { v: 'today', l: 'Today' },
-    { v: 'week',  l: '7 Days' },
+    { v: 'week',  l: 'Last 7 Days' },
     { v: 'month', l: 'This Month' },
     { v: 'year',  l: 'This Year' },
     { v: '',      l: 'All Time' },
   ];
 
+  const exportCSV = () => {
+    if (filtered.length === 0) return;
+    const headers = ['Date', 'License Key', 'Client', 'Plan', 'Sale Price', 'Commission', 'Net Profit', 'Reseller'];
+    const rows = filtered.map(e => [
+      e.date || '',
+      e.license_key || '',
+      `"${e.customer_name || ''}"`,
+      `"${e.plan_type || ''}"`,
+      e.sale_price || 0,
+      e.commission_amount || 0,
+      (e.sale_price || 0) - (e.commission_amount || 0),
+      `"${e.reseller_name || 'Direct Admin'}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `WAGrow_Earnings_${period || 'all'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Header */}
-      <div>
-        <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#fff', margin: 0 }}>
-          {isReseller ? '💰 My Earnings & Sales' : '📈 Earnings & Revenue'}
-        </h2>
-        <p style={{ color: '#64748b', fontSize: '13px', margin: '4px 0 0' }}>
-          {isReseller ? 'Your commission and sales history' : 'Full revenue tracking with reseller-wise breakdown'}
-        </p>
+    <div className="space-y-6">
+      
+      {/* Title & Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+            <span>💰</span>
+            <span>{isReseller ? 'My Commission & Sales History' : 'Revenue & Commission Analytics'}</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            {isReseller ? 'Real-time sales performance and pending payouts' : 'Complete financial overview with reseller-wise commission split.'}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <button
+            onClick={exportCSV}
+            className="btn-secondary text-xs py-2 px-3"
+            title="Download CSV report"
+          >
+            <span>📥 Export CSV</span>
+          </button>
+          <button
+            onClick={loadData}
+            className="btn-secondary text-xs p-2.5"
+            title="Refresh Ledger"
+          >
+            <span className={loading ? 'animate-spin inline-block' : ''}>🔄</span>
+          </button>
+        </div>
       </div>
 
-      {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: '14px' }}>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { label: isReseller ? 'My Sales' : 'Total Revenue', value: fmt(data?.summary?.total, currency), color: '#34d399', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
-          { label: 'Commission Paid', value: fmt(data?.summary?.commission, currency), color: '#818cf8', bg: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.25)' },
-          { label: isReseller ? 'My Net (after comm)' : 'Net Profit', value: fmt(data?.summary?.net, currency), color: '#22d3ee', bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.25)' },
-          { label: 'Transactions', value: data?.summary?.count ?? 0, color: '#fbbf24', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
-        ].map((c,i) => (
-          <div key={i} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: '14px', padding: '18px' }}>
-            <p style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>{c.label}</p>
-            <h3 style={{ fontSize: '24px', fontWeight: '900', color: c.color, margin: '6px 0 0', fontFamily: 'monospace' }}>
+          {
+            label: isReseller ? 'My Total Sales' : 'Gross Revenue (Total Kamai)',
+            value: fmt(data?.summary?.total, currency),
+            sub: `${data?.summary?.count ?? 0} total transactions`,
+            color: 'text-emerald-400',
+            border: 'border-emerald-500/25',
+            bg: 'bg-emerald-500/5',
+            icon: '💵'
+          },
+          {
+            label: isReseller ? 'Earned Commission' : 'Reseller Commissions',
+            value: fmt(data?.summary?.commission, currency),
+            sub: isReseller ? 'Your total commission' : 'Distributed to partners',
+            color: 'text-indigo-400',
+            border: 'border-indigo-500/25',
+            bg: 'bg-indigo-500/5',
+            icon: '🤝'
+          },
+          {
+            label: isReseller ? 'Paid Out Balance' : 'Net Admin Profit (Shuddh Munafa)',
+            value: fmt(data?.summary?.net, currency),
+            sub: isReseller ? 'Settled to your account' : 'After all commissions',
+            color: 'text-cyan-400',
+            border: 'border-cyan-500/25',
+            bg: 'bg-cyan-500/5',
+            icon: '💎'
+          },
+          {
+            label: 'Keys Activated',
+            value: data?.summary?.count ?? 0,
+            sub: `${period ? period.toUpperCase() : 'ALL TIME'} period`,
+            color: 'text-amber-400',
+            border: 'border-amber-500/25',
+            bg: 'bg-amber-500/5',
+            icon: '🔑'
+          }
+        ].map((c, i) => (
+          <div key={i} className={`glass-panel p-4 sm:p-5 rounded-2xl border ${c.border} ${c.bg}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{c.label}</span>
+              <span className="text-xl">{c.icon}</span>
+            </div>
+            <div className={`text-2xl sm:text-3xl font-black font-mono mt-2 ${c.color}`}>
               {loading ? '...' : c.value}
-            </h3>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1">{c.sub}</div>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-        {/* Period */}
-        <div style={{ display: 'flex', background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
-          {periodBtns.map(b => (
-            <button key={b.v} onClick={() => setPeriod(b.v)} style={{
-              padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600',
-              background: period === b.v ? 'linear-gradient(135deg,#10b981,#059669)' : 'transparent',
-              color: period === b.v ? '#fff' : '#64748b', transition: 'all 0.2s'
-            }}>{b.l}</button>
+      {/* Filter Toolbar */}
+      <div className="glass-panel p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Period Switcher */}
+        <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs overflow-x-auto pb-1 md:pb-0">
+          {periodBtns.map((b) => (
+            <button
+              key={b.v}
+              onClick={() => setPeriod(b.v)}
+              className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap transition-all ${
+                period === b.v
+                  ? 'bg-emerald-500 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {b.l}
+            </button>
           ))}
         </div>
 
-        {/* Reseller Filter (admin only) */}
-        {!isReseller && resellers.length > 0 && (
-          <select className="glass-input" style={{ minWidth: '180px' }} value={filterRes} onChange={e => setFilterRes(e.target.value)}>
-            <option value="">All Resellers</option>
-            {resellers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        )}
+        <div className="flex items-center gap-2 flex-1 max-w-lg">
+          {/* Reseller Filter (Admin Only) */}
+          {!isReseller && resellers.length > 0 && (
+            <select
+              className="glass-input text-xs py-2 px-3 rounded-xl w-auto min-w-[150px]"
+              value={filterRes}
+              onChange={(e) => setFilterRes(e.target.value)}
+            >
+              <option value="">All Resellers &amp; Direct</option>
+              {resellers.map((r) => (
+                <option key={r.id} value={r.id}>{r.name} ({r.id})</option>
+              ))}
+            </select>
+          )}
 
-        {/* Search */}
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <input className="glass-input" placeholder="Search customer, key, reseller..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+          {/* Search */}
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+            <input
+              type="text"
+              className="glass-input pl-8 text-xs"
+              placeholder="Search ledger..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
-        <button onClick={() => load()} className="btn-secondary" style={{ padding: '8px 16px' }}>🔄 Refresh</button>
       </div>
 
-      {/* Earnings Table */}
-      <div className="glass-panel" style={{ overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {/* Ledger Table */}
+      <div className="glass-panel overflow-hidden border border-slate-800">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
-              <tr style={{ background: 'rgba(15,23,42,0.6)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {['Date', 'Customer', 'License Key', 'Plan', isReseller ? '' : 'Reseller', 'Sale Price', 'Commission', 'Net'].filter(Boolean).map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
+              <tr className="border-b border-slate-800/80 bg-slate-900/60 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <th className="py-3.5 px-4 sm:px-5">Date</th>
+                <th className="py-3.5 px-4">License Key</th>
+                <th className="py-3.5 px-4">Client / Plan</th>
+                {!isReseller && <th className="py-3.5 px-4">Reseller Partner</th>}
+                <th className="py-3.5 px-4">Sale Price</th>
+                <th className="py-3.5 px-4">Commission</th>
+                <th className="py-3.5 px-5 text-right">{isReseller ? 'My Share' : 'Net Profit'}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-800/50">
               {loading ? (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '48px', color: '#475569' }}>Loading earnings...</td></tr>
-              ) : paginated.length === 0 ? (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '48px', color: '#475569' }}>
-                  <div style={{ fontSize: '32px' }}>📊</div>
-                  <p style={{ margin: '8px 0 0', color: '#64748b' }}>No transactions found for this period</p>
-                </td></tr>
-              ) : paginated.map((e, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}
-                  onMouseEnter={ev => ev.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                  onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}>
-                  <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '12px', whiteSpace: 'nowrap' }}>
-                    {new Date(e.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}
-                    <div style={{ fontSize: '10px', color: '#334155' }}>{new Date(e.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
+                <tr>
+                  <td colSpan={isReseller ? 6 : 7} className="py-12 text-center text-slate-400">
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></span>
+                      <span>Loading ledger records from Google Sheets...</span>
+                    </div>
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#f1f5f9', fontWeight: '600', fontSize: '13px' }}>{e.customer_name || '-'}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span className="mono-text" style={{ fontSize: '11px', background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '6px', color: '#22d3ee' }}>
-                      {(e.license_key || '-').substring(0, 18)}{e.license_key?.length > 18 ? '...' : ''}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)', color: '#22d3ee', padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' }}>
-                      {e.plan_type || 'Pro'}
-                    </span>
-                  </td>
-                  {!isReseller && <td style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '12px' }}>{e.reseller_name || 'Admin Direct'}</td>}
-                  <td style={{ padding: '12px 16px', color: '#34d399', fontWeight: '700', fontFamily: 'monospace' }}>{fmt(e.sale_price, currency)}</td>
-                  <td style={{ padding: '12px 16px', color: '#818cf8', fontFamily: 'monospace' }}>
-                    {fmt(e.commission_amount, currency)}
-                    {e.commission_percent > 0 && <div style={{ fontSize: '10px', color: '#475569' }}>{e.commission_percent}%</div>}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#22d3ee', fontWeight: '700', fontFamily: 'monospace' }}>{fmt(e.net, currency)}</td>
                 </tr>
-              ))}
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={isReseller ? 6 : 7} className="py-12 text-center">
+                    <div className="max-w-xs mx-auto text-slate-400">
+                      <span className="text-3xl block mb-2">💰</span>
+                      <p className="font-bold text-white text-sm">No transaction records found</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        When paid licenses are generated, sales and commissions automatically log here.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((item, idx) => {
+                  const salePrice = parseFloat(item.sale_price) || 0;
+                  const comm = parseFloat(item.commission_amount) || 0;
+                  const net = isReseller ? comm : (salePrice - comm);
+
+                  return (
+                    <tr key={item.id || idx} className="table-row-hover">
+                      {/* Date */}
+                      <td className="py-3.5 px-4 sm:px-5 text-slate-300 font-mono text-xs">
+                        {item.date ? new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      </td>
+
+                      {/* License Key */}
+                      <td className="py-3.5 px-4">
+                        <code className="font-mono text-xs text-emerald-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 select-all">
+                          {item.license_key}
+                        </code>
+                      </td>
+
+                      {/* Client / Plan */}
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-white text-xs">
+                          {item.customer_name || 'Direct Buyer'}
+                        </div>
+                        <span className="text-[10px] text-indigo-400 font-semibold">
+                          {item.plan_type || 'Pro License'}
+                        </span>
+                      </td>
+
+                      {/* Reseller Name */}
+                      {!isReseller && (
+                        <td className="py-3.5 px-4">
+                          {item.reseller_name ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-indigo-300 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded">
+                              <span>🏪</span>
+                              <span>{item.reseller_name}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-500 font-medium">Direct / Admin</span>
+                          )}
+                        </td>
+                      )}
+
+                      {/* Sale Price */}
+                      <td className="py-3.5 px-4 font-mono font-bold text-white">
+                        {fmt(salePrice, currency)}
+                      </td>
+
+                      {/* Commission */}
+                      <td className="py-3.5 px-4 font-mono text-xs">
+                        {comm > 0 ? (
+                          <span className="text-indigo-400">
+                            {fmt(comm, currency)} ({item.commission_percent || 30}%)
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">₹0 (0%)</span>
+                        )}
+                      </td>
+
+                      {/* Net */}
+                      <td className="py-3.5 px-5 text-right font-mono font-black text-sm text-emerald-400">
+                        +{fmt(net, currency)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', color: '#475569' }}>
-              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-            </span>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}>← Prev</button>
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}>Next →</button>
+        {/* Pagination & Count */}
+        <div className="p-3.5 bg-slate-950/60 border-t border-slate-800/80 text-xs text-slate-400 flex items-center justify-between px-5">
+          <span>
+            Showing {paginated.length} of {filtered.length} transactions
+          </span>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+                className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
+              >
+                Prev
+              </button>
+              <span className="px-2 font-mono text-white">
+                {page} / {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+                className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
+              >
+                Next
+              </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
     </div>
   );
 }

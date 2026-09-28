@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react';
 
 export default function LicenseTable({
-  licenses,
-  loading,
-  isReseller,
+  licenses = [],
+  loading = false,
+  isReseller = false,
   onRefresh,
   onSearch,
   onEdit,
   onResetDevices,
   onDelete,
-  compact
+  compact = false
 }) {
-  const [search, setSearch]         = useState('');
+  const [search, setSearch]             = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [copiedKey, setCopiedKey]   = useState(null);
+  const [copiedKey, setCopiedKey]       = useState(null);
 
   useEffect(() => {
     if (onSearch) {
-      const t = setTimeout(() => onSearch(search, statusFilter), 350);
+      const t = setTimeout(() => onSearch(search, statusFilter), 300);
       return () => clearTimeout(t);
     }
-  }, [search, statusFilter]);
+  }, [search, statusFilter, onSearch]);
 
   const handleCopy = (key) => {
     navigator.clipboard.writeText(key);
@@ -29,203 +29,274 @@ export default function LicenseTable({
   };
 
   const getDaysLeft = (expiresAt) => {
+    if (!expiresAt) return null;
     const exp = new Date(expiresAt).getTime();
-    const now = new Date().getTime();
-    const diff = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
-    return diff;
+    const now = Date.now();
+    return Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
   };
+
+  const filtered = licenses.filter((lic) => {
+    if (statusFilter !== 'all') {
+      const days = getDaysLeft(lic.expires_at);
+      const isExp = (lic.status === 'expired') || (days !== null && days <= 0);
+      if (statusFilter === 'active' && isExp) return false;
+      if (statusFilter === 'expired' && !isExp) return false;
+      if (statusFilter === 'suspended' && lic.status !== 'suspended') return false;
+    }
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return (
+      (lic.customer_name || '').toLowerCase().includes(s) ||
+      (lic.mobile || '').includes(s) ||
+      (lic.email || '').toLowerCase().includes(s) ||
+      (lic.license_key || '').toLowerCase().includes(s) ||
+      (lic.plan_type || '').toLowerCase().includes(s)
+    );
+  });
 
   return (
     <div className="glass-panel overflow-hidden border border-slate-800">
       
-      {/* Table Toolbar */}
-      <div className="p-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <input
-            type="text"
-            className="glass-input pl-10"
-            placeholder="Search by client name, mobile, email, key..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <svg className="w-5 h-5 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-        </div>
-
-        {/* Status Filters & Actions */}
-        <div className="flex items-center gap-3 overflow-x-auto">
-          <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
-            {['all', 'active', 'expired', 'suspended'].map((tab) => (
+      {/* Toolbar */}
+      {!compact && (
+        <div className="p-4 sm:p-5 border-b border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-950/40">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+              🔍
+            </span>
+            <input
+              type="text"
+              className="glass-input pl-10 text-xs sm:text-sm"
+              placeholder="Search by client name, mobile, key, or plan..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
               <button
-                key={tab}
-                onClick={() => setStatusFilter(tab)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
-                  statusFilter === tab
-                    ? 'bg-emerald-500 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
               >
-                {tab}
+                ✕
               </button>
-            ))}
+            )}
           </div>
 
-          <button
-            onClick={onRefresh}
-            className="btn-secondary text-xs p-2.5"
-            title="Refresh Table"
-          >
-            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-          </button>
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+            <div className="flex bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+              {[
+                { id: 'all',       label: 'All' },
+                { id: 'active',    label: 'Active' },
+                { id: 'expired',   label: 'Expired' },
+                { id: 'suspended', label: 'Suspended' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setStatusFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg font-semibold capitalize transition-all ${
+                    statusFilter === tab.id
+                      ? 'bg-emerald-500 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={onRefresh}
+              className="btn-secondary text-xs p-2.5 flex-shrink-0"
+              title="Refresh Licenses"
+            >
+              <span className={loading ? 'animate-spin inline-block' : ''}>🔄</span>
+            </button>
+          </div>
         </div>
+      )}
 
-      </div>
-
-      {/* Table Content */}
+      {/* Table Container */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse text-xs sm:text-sm">
           <thead>
-            <tr className="border-b border-slate-800/80 bg-slate-900/40 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              <th className="py-3.5 px-5">Customer / Contact</th>
-              <th className="py-3.5 px-5">Plan</th>
-              <th className="py-3.5 px-5">License Key</th>
-              <th className="py-3.5 px-5">Expires On</th>
-              <th className="py-3.5 px-5">Devices</th>
-              <th className="py-3.5 px-5">Status</th>
-              <th className="py-3.5 px-5 text-right">Actions</th>
+            <tr className="border-b border-slate-800/80 bg-slate-900/60 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <th className="py-3.5 px-4 sm:px-5">Client / Contact</th>
+              <th className="py-3.5 px-4">Plan / Validity</th>
+              <th className="py-3.5 px-4">License Key</th>
+              <th className="py-3.5 px-4">Expiry Date</th>
+              <th className="py-3.5 px-4">Devices Bound</th>
+              <th className="py-3.5 px-4">Status</th>
+              {!compact && <th className="py-3.5 px-5 text-right">Actions</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 text-sm">
+          <tbody className="divide-y divide-slate-800/50">
             {loading ? (
               <tr>
-                <td colSpan="7" className="py-12 text-center text-slate-400">
-                  <div className="inline-block animate-spin h-7 w-7 border-2 border-emerald-500 border-t-transparent rounded-full mb-2"></div>
-                  <p>Loading database from Google Sheets...</p>
+                <td colSpan={compact ? 6 : 7} className="py-12 text-center text-slate-400">
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></span>
+                    <span>Loading licenses from Google Sheets...</span>
+                  </div>
                 </td>
               </tr>
-            ) : licenses.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan="7" className="py-12 text-center text-slate-400">
-                  <svg className="w-12 h-12 mx-auto text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                  <p className="font-semibold text-slate-300">No licenses found</p>
-                  <p className="text-xs text-slate-500 mt-1">Generate a new license key above to get started.</p>
+                <td colSpan={compact ? 6 : 7} className="py-12 text-center">
+                  <div className="max-w-xs mx-auto text-slate-400">
+                    <span className="text-3xl block mb-2">🔑</span>
+                    <p className="font-bold text-white text-sm">No licenses found</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {search ? 'Try clearing search filters' : 'Click "+ Issue License" to create the first license key.'}
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (
-              licenses.map((lic) => {
-                const daysLeft = getDaysLeft(lic.expires_at);
-                const isExpired = daysLeft <= 0;
-                const status = lic.status === 'suspended' ? 'suspended' : isExpired ? 'expired' : 'active';
+              filtered.map((lic) => {
+                const days = getDaysLeft(lic.expires_at);
+                const isExp = (lic.status === 'expired') || (days !== null && days <= 0);
+                const isCopied = copiedKey === lic.license_key;
+                const cleanPhone = (lic.mobile || '').replace(/[^0-9]/g, '');
 
                 return (
-                  <tr key={lic.id} className="hover:bg-slate-900/30 transition-colors">
+                  <tr key={lic.id || lic.license_key} className="table-row-hover">
                     
-                    {/* Customer */}
-                    <td className="py-4 px-5">
-                      <div className="font-semibold text-white">{lic.customer_name}</div>
-                      <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
-                        {lic.mobile && <span>📱 {lic.mobile}</span>}
-                        {lic.email && <span>✉️ {lic.email}</span>}
+                    {/* Customer Info */}
+                    <td className="py-3.5 px-4 sm:px-5">
+                      <div className="font-bold text-white text-sm">
+                        {lic.customer_name || 'Unnamed Client'}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                        {cleanPhone ? (
+                          <a
+                            href={`https://wa.me/${cleanPhone}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-emerald-400 hover:underline flex items-center gap-1 font-mono"
+                            title="Chat on WhatsApp"
+                          >
+                            <span>💬</span>
+                            <span>{lic.mobile}</span>
+                          </a>
+                        ) : (
+                          <span className="text-slate-500">No Mobile</span>
+                        )}
+                        {lic.email && (
+                          <span className="text-slate-500 truncate max-w-[130px]" title={lic.email}>
+                            • {lic.email}
+                          </span>
+                        )}
                       </div>
                     </td>
 
                     {/* Plan */}
-                    <td className="py-4 px-5">
-                      <span className="badge badge-plan">
-                        {lic.plan_type}
+                    <td className="py-3.5 px-4">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-500/10 border border-indigo-500/25 text-indigo-300">
+                        <span>🏷️</span>
+                        <span>{lic.plan_type || 'Standard'}</span>
                       </span>
+                      {lic.price && (
+                        <div className="text-[11px] text-slate-400 font-mono mt-1">
+                          ₹{lic.price}
+                        </div>
+                      )}
                     </td>
 
-                    {/* Key */}
-                    <td className="py-4 px-5">
+                    {/* License Key */}
+                    <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="mono-text font-medium text-emerald-400 bg-slate-950 px-2.5 py-1 rounded border border-slate-800 text-xs">
+                        <code className="font-mono text-xs text-emerald-400 bg-slate-900/80 px-2 py-1 rounded border border-slate-800 font-semibold select-all">
                           {lic.license_key}
-                        </span>
+                        </code>
                         <button
                           onClick={() => handleCopy(lic.license_key)}
-                          className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors text-xs"
                           title="Copy Key"
                         >
-                          {copiedKey === lic.license_key ? (
-                            <span className="text-xs font-bold text-emerald-400">✓</span>
-                          ) : (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                            </svg>
-                          )}
+                          {isCopied ? '✅' : '📋'}
                         </button>
                       </div>
-                    </td>
-
-                    {/* Expiry */}
-                    <td className="py-4 px-5">
-                      <div className="text-xs text-slate-200">
-                        {new Date(lic.expires_at).toLocaleDateString()}
-                      </div>
-                      <div className="text-[11px] font-medium mt-0.5">
-                        {isExpired ? (
-                          <span className="text-rose-400 font-bold">Expired</span>
-                        ) : (
-                          <span className="text-emerald-400">{daysLeft} days left</span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Devices */}
-                    <td className="py-4 px-5">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-slate-300">
-                          {lic.active_devices || 0} / {lic.max_devices || 1}
+                      {isCopied && (
+                        <span className="text-[10px] text-emerald-400 font-bold block mt-0.5">
+                          Copied to clipboard!
                         </span>
-                        {(lic.active_devices > 0) && (
-                          <button
-                            onClick={() => onResetDevices(lic.license_key)}
-                            className="text-[10px] text-cyan-400 hover:underline bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40"
-                            title="Unbind machine IDs so user can switch PC"
-                          >
-                            Reset PC
-                          </button>
+                      )}
+                    </td>
+
+                    {/* Expiry Date */}
+                    <td className="py-3.5 px-4">
+                      <div className="text-white font-medium">
+                        {lic.expires_at ? new Date(lic.expires_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Never (Lifetime)'}
+                      </div>
+                      <div className="text-[11px] mt-0.5 font-bold">
+                        {days === null ? (
+                          <span className="text-purple-400">∞ Lifetime</span>
+                        ) : days <= 0 ? (
+                          <span className="text-rose-400">Expired ({Math.abs(days)}d ago)</span>
+                        ) : days <= 7 ? (
+                          <span className="text-amber-400">⚠️ {days} days left!</span>
+                        ) : (
+                          <span className="text-slate-400">{days} days remaining</span>
                         )}
                       </div>
                     </td>
 
-                    {/* Status */}
-                    <td className="py-4 px-5">
-                      <span className={`badge badge-${status}`}>
-                        <span className="h-1.5 w-1.5 rounded-full bg-current"></span>
-                        {status}
-                      </span>
+                    {/* Device meter */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="font-mono font-bold text-white text-xs">
+                          {lic.active_devices ?? 0} / {lic.max_devices || 1}
+                        </div>
+                        <span className="text-[10px] text-slate-400">PCs</span>
+                      </div>
+                      {lic.active_devices > 0 && onResetDevices && !compact && (
+                        <button
+                          onClick={() => onResetDevices(lic.license_key)}
+                          className="text-[10px] text-cyan-400 hover:underline mt-0.5 block font-medium"
+                          title="Allow user to activate on another PC"
+                        >
+                          Reset Hardware
+                        </button>
+                      )}
+                    </td>
+
+                    {/* Status Badge */}
+                    <td className="py-3.5 px-4">
+                      {isExp ? (
+                        <span className="badge badge-expired">Expired</span>
+                      ) : lic.status === 'suspended' ? (
+                        <span className="badge badge-suspended">Suspended</span>
+                      ) : (
+                        <span className="badge badge-active">Active</span>
+                      )}
                     </td>
 
                     {/* Actions */}
-                    <td className="py-4 px-5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => onEdit(lic)}
-                          className="btn-secondary text-xs py-1 px-2.5"
-                          title="Edit License"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => onDelete(lic)}
-                          className="btn-danger p-1.5"
-                          title="Delete"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
+                    {!compact && (
+                      <td className="py-3.5 px-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {onEdit && (
+                            <button
+                              onClick={() => onEdit(lic)}
+                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                              title="Edit License Plan & Dates"
+                            >
+                              ⚙️
+                            </button>
+                          )}
+                          {onDelete && !isReseller && (
+                            <button
+                              onClick={() => onDelete(lic)}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                              title="Delete License"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
 
                   </tr>
                 );
@@ -233,6 +304,12 @@ export default function LicenseTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Footer count */}
+      <div className="p-3 bg-slate-950/60 border-t border-slate-800/80 text-xs text-slate-400 flex items-center justify-between px-5">
+        <span>Showing {filtered.length} of {licenses.length} licenses</span>
+        <span>Hardware bound with RSA-2048 &amp; Machine ID</span>
       </div>
 
     </div>

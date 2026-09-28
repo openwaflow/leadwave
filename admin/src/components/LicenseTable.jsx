@@ -294,9 +294,9 @@ export default function LicenseTable({
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2">
                         <div className="font-mono font-bold text-white text-xs">
-                          {lic.active_devices ?? 0} / {lic.max_devices || 1}
+                          {lic.active_devices ?? 0} / {lic.max_devices || 100}
                         </div>
-                        <span className="text-[10px] text-slate-400">PCs</span>
+                        <span className="text-[10px] text-slate-400">WA Devices</span>
                       </div>
                       {lic.active_devices > 0 && onResetDevices && !compact && (
                         <button

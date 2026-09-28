@@ -23,7 +23,7 @@ export default function EditLicenseModal({ isOpen, onClose, license, onSave, onU
     plan_type: 'Pro',
     expires_at: '',
     status: 'active',
-    max_devices: 1,
+    max_devices: 100,
     notes: ''
   });
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export default function EditLicenseModal({ isOpen, onClose, license, onSave, onU
           } catch (_) { return ''; }
         })(),
         status: license.status || 'active',
-        max_devices: license.max_devices || 1,
+        max_devices: license.max_devices !== undefined ? (parseInt(license.max_devices) || 100) : 100,
         notes: license.notes || ''
       });
     }
@@ -235,33 +235,54 @@ export default function EditLicenseModal({ isOpen, onClose, license, onSave, onU
             </div>
           </div>
 
-          {/* Max Devices & Notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Max Allowed Devices
+          {/* Max WhatsApp Devices Limit */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-300">
+                Max WhatsApp Devices / Accounts <span className="text-emerald-400">*</span>
               </label>
-              <input
-                type="number"
-                min="1"
-                max="50"
-                className="glass-input"
-                value={formData.max_devices}
-                onChange={(e) => setFormData({ ...formData, max_devices: parseInt(e.target.value) || 1 })}
-              />
+              <div className="flex items-center gap-1.5">
+                {[1, 5, 10, 50, 100].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, max_devices: num })}
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${
+                      formData.max_devices === num
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    {num} {num === 100 ? '(Default)' : 'WA'}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Internal Notes
-              </label>
-              <input
-                type="text"
-                className="glass-input"
-                placeholder="Optional notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              />
-            </div>
+            <input
+              type="number"
+              min="1"
+              max="500"
+              required
+              className="glass-input font-mono font-bold text-emerald-400"
+              value={formData.max_devices}
+              onChange={(e) => setFormData({ ...formData, max_devices: parseInt(e.target.value) || 100 })}
+            />
+            <p className="text-[11px] text-slate-500 mt-1">
+              Client WAGrow app me ek sath kitne WhatsApp accounts connect kar sakta hai (Default: 100).
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Internal Notes
+            </label>
+            <input
+              type="text"
+              className="glass-input"
+              placeholder="Optional notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            />
           </div>
 
           {/* Footer */}

@@ -23,7 +23,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
     email: '',
     plan_type: 'Pro',
     validity_days: '365',
-    max_devices: '1',
+    max_devices: '100',
     price: '',
     notes: ''
   });
@@ -303,18 +303,19 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Max Allowed PCs
+                  Max WhatsApp Accounts (Devices)
                 </label>
                 <select
                   className="glass-input"
                   value={formData.max_devices}
                   onChange={(e) => setFormData({ ...formData, max_devices: e.target.value })}
                 >
-                  <option value="1">1 PC (Standard)</option>
-                  <option value="2">2 PCs</option>
-                  <option value="3">3 PCs</option>
-                  <option value="5">5 PCs (Office)</option>
-                  <option value="10">10 PCs (Enterprise)</option>
+                  <option value="100">100 WhatsApp Accounts (Default)</option>
+                  <option value="50">50 WhatsApp Accounts</option>
+                  <option value="25">25 WhatsApp Accounts</option>
+                  <option value="10">10 WhatsApp Accounts</option>
+                  <option value="5">5 WhatsApp Accounts</option>
+                  <option value="1">1 WhatsApp Account</option>
                 </select>
               </div>
 

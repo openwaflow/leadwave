@@ -2499,6 +2499,171 @@ ipcMain.handle("license:request-gas-trial", async (_evt, _params) => {
   }
 });
 
+ipcMain.handle("license:activate-gas-key", async (_event, params) => {
+  try {
+    const rawKey = ((params && params.license_key) || "").trim();
+    if (!rawKey) {
+      return { success: false, message: "Kripya License Key enter karein." };
+    }
+
+    const gasUrl = (params && params.gas_url) || "https://script.google.com/macros/s/AKfycbz1XvaCZjCbonh1bqeNycOGFwFD7rApZUMuZb3XMOsIfJtoHlVFUqJILdfOVcRlEpk/exec";
+    const machineId = generateMachineId();
+    logToFile("🔑 [GAS Paid Key Activation] Key: " + rawKey + " Machine: " + machineId);
+
+    // 1. Check Google Apps Script Database
+    let gasResult = null;
+    try {
+      const fetchWithRedirect = async (url, options, maxRedirects = 5) => {
+        let currentUrl = url;
+        for (let i = 0; i < maxRedirects; i++) {
+          const resp = await fetch(currentUrl, options);
+          if ([301, 302, 303, 307, 308].includes(resp.status)) {
+            const location = resp.headers.get("location");
+            if (location) {
+              currentUrl = location;
+              options = { method: "GET" };
+              continue;
+            }
+          }
+          return resp;
+        }
+        throw new Error("Too many redirects");
+      };
+
+      const response = await fetchWithRedirect(gasUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "activateLicense",
+          key: rawKey,
+          machine_id: machineId
+        })
+      });
+
+      const text = await response.text();
+      try {
+        gasResult = JSON.parse(text);
+      } catch (pe) {
+        logToFile("⚠️ Non-JSON response from GAS: " + text.substring(0, 100));
+      }
+    } catch (netErr) {
+      logToFile("⚠️ GAS network call failed: " + netErr.message);
+    }
+
+    if (gasResult && gasResult.success && gasResult.valid && gasResult.data) {
+      const data = gasResult.data;
+      const licenseData = {
+        license_key:   data.license_key || rawKey,
+        customer_name: data.customer_name || "Valued Client",
+        plan_name:     data.plan_name || "Pro",
+        plan_type:     (data.plan_type || "pro").toLowerCase(),
+        plan:          (data.plan_name || "pro").toLowerCase(),
+        expires_at:    data.expires_at,
+        machine_id:    machineId,
+        registered_at: new Date().toISOString(),
+        activated_at:  new Date().toISOString(),
+        isTrial:       false,
+        status:        "active",
+        gas_url:       gasUrl,
+        modules:       ["bulk", "warmer", "ai-chatbot", "rest-api", "telegram", "campaign-scheduler", "live-chat"],
+        max_devices:   data.max_devices || 1,
+        source:        "gas_paid"
+      };
+
+      addLicenseSignature(licenseData);
+      const appDataDir = getAppDataPath();
+      if (!fs.existsSync(appDataDir)) {
+        fs.mkdirSync(appDataDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(appDataDir, "license.json"), JSON.stringify(licenseData, null, 2), "utf8");
+
+      try {
+        if (typeof newlicLicenseService !== "undefined" && newlicLicenseService && newlicLicenseService._encrypt) {
+          const enc = newlicLicenseService._encrypt(licenseData);
+          fs.writeFileSync(path.join(appDataDir, "license.enc"), enc, "utf8");
+          newlicLicenseService.set("license", {
+            key: licenseData.license_key,
+            machineId: machineId,
+            activatedAt: new Date().toISOString(),
+            data: {
+              name: licenseData.customer_name,
+              plan: licenseData.plan,
+              modules: licenseData.modules,
+              max_devices: licenseData.max_devices
+            },
+            expiresAt: licenseData.expires_at
+          });
+        }
+      } catch (encErr) {
+        logToFile("⚠️ Error writing license.enc: " + encErr.message);
+      }
+
+      logToFile("✅ WAGrow paid license activated via GAS: " + licenseData.license_key);
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          logToFile("🔄 Reloading window after paid key activation...");
+          mainWindow.reload();
+        }
+      }, 1500);
+
+      return {
+        success: true,
+        message: "🎉 Mubarak! License activate ho gaya! Client: " + licenseData.customer_name + " (" + licenseData.plan_name + " Plan). App chalu ho raha hai...",
+        data: licenseData
+      };
+    } else if (gasResult && gasResult.error_code) {
+      if (gasResult.error_code === "MAX_DEVICES_REACHED") {
+        return { success: false, message: "⚠️ Is license key ki device limit poori ho chuki hai. Admin se extra device add karwayein ya device reset karwayein." };
+      }
+      if (gasResult.error_code === "LICENSE_EXPIRED") {
+        return { success: false, message: "⚠️ Yeh license expire ho chuka hai. Kripya renew karein." };
+      }
+      if (gasResult.error_code === "LICENSE_REVOKED") {
+        return { success: false, message: "⚠️ Yeh license admin dwara suspend/revoke kiya gaya hai." };
+      }
+      if (gasResult.error_code !== "LICENSE_NOT_FOUND") {
+        return { success: false, message: gasResult.error || "License verify nahi ho saka." };
+      }
+    }
+
+    // 2. Try native activation fallback (for offline built-in key formats)
+    logToFile("🔄 Trying native activation fallback for key: " + rawKey);
+    try {
+      const nativeHandler = ipcMain._invokeHandlers ? ipcMain._invokeHandlers.get("license:activate") : null;
+      if (nativeHandler) {
+        const fallbackResult = await nativeHandler(null, rawKey);
+        if (fallbackResult && fallbackResult.success) {
+          setTimeout(() => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.reload();
+            }
+          }, 1500);
+          return {
+            success: true,
+            message: "🎉 License successfully activated! App start ho raha hai...",
+            data: fallbackResult.data
+          };
+        } else if (fallbackResult && fallbackResult.message) {
+          return { success: false, message: fallbackResult.message };
+        }
+      }
+    } catch (fbErr) {
+      logToFile("⚠️ Native fallback error: " + fbErr.message);
+    }
+
+    return {
+      success: false,
+      message: "❌ Galat License Key hai ya key database mein nahi mili. Kripya check karke dobara enter karein."
+    };
+  } catch (err) {
+    logToFile("❌ activate-gas-key error: " + err.message);
+    return {
+      success: false,
+      message: "License activate nahi ho saka: " + err.message
+    };
+  }
+});
+
 ipcMain.handle("license:validate", async _0x2a2478 => {
   try {
     const _0x1b551b = getAppDataPath();

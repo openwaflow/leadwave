@@ -192,6 +192,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     renew: _0x1dfa02 => ipcRenderer.invoke("license:renew", _0x1dfa02),
     registerTrial: _0x13fad3 => ipcRenderer.invoke("license:register-trial", _0x13fad3),
     requestGasTrial: params => ipcRenderer.invoke("license:request-gas-trial", params),
+    activateGasPaidKey: params => ipcRenderer.invoke("license:activate-gas-key", params),
     validate: () => ipcRenderer.invoke("license:validate"),
     getLocalInfo: () => ipcRenderer.invoke("license:get-local-info"),
     saveLocalInfo: _0x527933 => ipcRenderer.invoke("license:save-local-info", _0x527933),

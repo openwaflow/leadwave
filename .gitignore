@@ -11,8 +11,8 @@ out/
 
 # Database backups & temporary database files
 build/data/backups/
-*.pre-v9
-*.backup
+build/data/*.pre-v9
+build/data/*.backup
 *.sqlite-journal
 *.db-journal
 *.db-wal
@@ -25,9 +25,18 @@ logs/
 # OS generated files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Environment variables & local secrets
 .env
 .env.local
 license.json
+
+# WhatsApp session auth files (user-specific, not for repo)
 auth_sessions/
+build/data/auth_*/
+build/data/session_*/
+
+# Temp files
+*.tmp
+*.temp

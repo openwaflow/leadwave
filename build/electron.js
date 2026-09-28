@@ -1752,605 +1752,127 @@ ipcMain.handle("reseller:get-config", () => {
   };
 });
 ipcMain.handle("license:activate", async (_0x35171c, _0x4ae721) => {
-  if (isDev) {}
   try {
-    if (isDev) {}
-    _0x4ae721 = _0x4ae721.trim();
-    logToFile("🔑 License key (trimmed): " + _0x4ae721);
-    const _0x2227c7 = generateMachineId();
-    logToFile("🔑 Attempting license activation for: " + _0x4ae721 + " with machine ID: " + _0x2227c7);
-    if (isDev) {}
-    logToFile("🔍 Starting simplified license validation...");
-    if (isDev) {}
-    if (_0x4ae721.startsWith("LW2.") && _0x4ae721.split(".").length === 3) {
-      try {
-        const _0x92e323 = require("crypto");
-        const {
-          LICENSE_PUBLIC_KEY: _0x380311
-        } = require(resolveModulePath("security/license-public-key"));
-        const [, _0x1adfe1, _0x14c48b] = _0x4ae721.split(".");
-        const _0x110569 = _0x14c48b.replace(/-/g, "+").replace(/_/g, "/");
-        const _0xce044b = _0x92e323.createVerify("RSA-SHA256");
-        _0xce044b.update(_0x1adfe1);
-        if (!_0xce044b.verify(_0x380311, _0x110569, "base64")) {
-          logToFile("❌ V2 license signature verification failed");
-          return {
-            success: false,
-            message: "Invalid license key (signature check failed)",
-            error_code: "INVALID_SIGNATURE"
-          };
-        }
-        const _0x37eacc = _0x1adfe1.length % 4 === 0 ? "" : "=".repeat(4 - _0x1adfe1.length % 4);
-        const _0x13637d = Buffer.from(_0x1adfe1.replace(/-/g, "+").replace(/_/g, "/") + _0x37eacc, "base64").toString("utf8");
-        const _0x14eb23 = JSON.parse(_0x13637d);
-        const _0x5929ae = (_0x14eb23.exp || 0) * 1000;
-        if (Date.now() > _0x5929ae) {
-          return {
-            success: false,
-            message: "This license has expired. Please contact your administrator.",
-            error_code: "EXPIRED"
-          };
-        }
-        const _0x4498f4 = require(resolveModulePath("services/newlic-license-service"));
-        const _0x3e32d7 = await _0x4498f4.activateLicense(_0x4ae721, _0x2227c7);
-        return _0x3e32d7;
-      } catch (_0x2400f6) {
-        logToFile("❌ V2 activation error: " + _0x2400f6.message);
-        return {
-          success: false,
-          message: "License activation failed",
-          error_code: "V2_ACTIVATION_ERROR"
-        };
-      }
-    }
-    // 1. Google Apps Script (GAS) Server Activation for LW- keys
-    if (_0x4ae721.startsWith("LW-")) {
-      try {
-        logToFile("🌐 Checking key with Google Apps Script server: " + _0x4ae721);
-        const gasRes = await activateGasLicenseKey(_0x4ae721);
-        if (gasRes && gasRes.success) {
-          logToFile("✅ License activated successfully via Google Apps Script!");
-          return gasRes;
-        } else if (gasRes && gasRes.error_code && gasRes.error_code !== "LICENSE_NOT_FOUND") {
-          return gasRes;
-        }
-      } catch (gasErr) {
-        logToFile("⚠️ GAS check error in license:activate: " + gasErr.message);
-      }
-    }
+    _0x4ae721 = (_0x4ae721 || "").trim();
+    logToFile("🔑 License key activation request: " + _0x4ae721);
 
-    const _0x2345ee = _0x4ae721.split("-");
-    if (_0x2345ee.length === 5 && _0x2345ee[0] === "LW") {
-      logToFile("🔍 Detected self-contained license format (Keygen generated)");
-      try {
-        const [_0x42b27b, _0x1b47ab, _0x560489, _0x5c70c7, _0x10d4f9] = _0x2345ee;
-        const _0x36d987 = require("crypto");
-        logToFile("🔍 Parts: prefix=" + _0x42b27b + ", encodedData=" + _0x1b47ab + ", expiryHex=" + _0x560489 + ", checksum=" + _0x5c70c7 + ", signature=" + _0x10d4f9);
-        const _0x404070 = _0x1b47ab + "-" + _0x560489;
-        const _0x4d2b28 = _0x36d987.createHash("md5").update(_0x404070).digest("hex").substring(0, 4).toUpperCase();
-        logToFile("🔍 Checksum validation: expected=" + _0x4d2b28 + ", provided=" + _0x5c70c7);
-        if (_0x5c70c7 !== _0x4d2b28) {
-          logToFile("❌ Checksum validation failed");
-          return {
-            success: false,
-            message: "Invalid license key. Checksum verification failed.",
-            error_code: "INVALID_CHECKSUM"
-          };
-        }
-        const _0x5e3230 = Buffer.from(_0x1b47ab, "hex").toString("utf8");
-        const _0x43e586 = JSON.parse(_0x5e3230);
-        logToFile("🔍 Decoded license data: " + JSON.stringify(_0x43e586));
-        const _0xc6edd4 = parseInt(_0x560489, 16);
-        const _0x28a998 = new Date(_0xc6edd4 * 1000);
-        const _0x41b5cc = new Date();
-        logToFile("🔍 Expiry check: now=" + _0x41b5cc.toISOString() + ", expires=" + _0x28a998.toISOString());
-        if (_0x41b5cc > _0x28a998) {
-          logToFile("❌ License has expired");
-          return {
-            success: false,
-            message: "This license has expired. Please contact your administrator.",
-            error_code: "EXPIRED"
-          };
-        }
-        logToFile("✅ Local checksum/expiry passed - confirming with license server...");
-        try {
-          const _0xe8d69a = new AbortController();
-          const _0x20433d = setTimeout(() => _0xe8d69a.abort(), 8000);
-          let _0x4eac;
-          try {
-            _0x4eac = await fetch("https://license.getleadwave.in/api/licenses/heartbeat", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                license_key: _0x4ae721,
-                machine_id: _0x2227c7,
-                app_version: app.getVersion()
-              }),
-              signal: _0xe8d69a.signal
-            });
-          } finally {
-            clearTimeout(_0x20433d);
-          }
-          const _0x3bee2c = await _0x4eac.json();
-          logToFile("🌐 Server confirmation response: status=" + _0x4eac.status + ", valid=" + _0x3bee2c.valid);
-          if (!_0x3bee2c.valid) {
-            const _0x14d72f = _0x3bee2c.message || "License not found on server";
-            logToFile("❌ Server rejected license during activation: " + _0x14d72f);
-            return {
-              success: false,
-              message: "License activation denied: " + _0x14d72f + ". Please contact your administrator.",
-              error_code: "SERVER_REJECTED"
-            };
-          }
-          logToFile("✅ Server confirmed license is valid");
-        } catch (_0x2f97e0) {
-          logToFile("❌ License server unreachable during v1 activation (" + _0x2f97e0.message + ") — rejecting");
-          return {
-            success: false,
-            message: "Could not reach license server to activate this legacy key. Please connect to the internet and try again.",
-            error_code: "SERVER_UNREACHABLE"
-          };
-        }
-        const _0x2d65be = _0x43e586.machine_id;
-        if (_0x2d65be) {
-          logToFile("🔍 License machine ID: " + _0x2d65be);
-          logToFile("🔍 Current machine ID: " + _0x2227c7);
-          if (_0x2d65be !== _0x2227c7) {
-            logToFile("❌ Machine ID mismatch - license not valid for this machine");
-            return {
-              success: false,
-              message: "This license key is not valid for this computer. Please contact your administrator for a license specific to this machine.",
-              error_code: "MACHINE_ID_MISMATCH"
-            };
-          }
-          logToFile("✅ Machine ID validation passed");
-        } else {
-          logToFile("ℹ️ License has no machine ID restriction (legacy license)");
-        }
-        const _0x108ee3 = path.join(app.getPath("userData"), "activations.json");
-        let _0x113f21 = [];
-        try {
-          const _0x2622da = await fs.promises.readFile(_0x108ee3, "utf8");
-          _0x113f21 = JSON.parse(_0x2622da);
-        } catch (_0x7b9867) {
-          if (_0x7b9867.code !== "ENOENT") {
-            logToFile("⚠️ Failed to read activations file: " + _0x7b9867.message);
-          }
-        }
-        const _0x2d9d9a = _0x113f21.find(_0x495a66 => _0x495a66.license_key === _0x4ae721 && _0x495a66.machine_id === _0x2227c7);
-        if (_0x2d9d9a) {
-          logToFile("❌ License " + _0x4ae721 + " already activated on machine " + _0x2227c7);
-          return {
-            success: false,
-            message: "This license key has already been activated on this machine. Each license can only be activated once per machine.",
-            error_code: "LICENSE_ALREADY_ACTIVATED"
-          };
-        }
-        logToFile("💾 Storing license information locally...");
-        let _0x492e95 = null;
-        if (_0x43e586.company_info) {
-          _0x492e95 = _0x43e586.company_info;
-        } else if (_0x43e586.company) {
-          _0x492e95 = {
-            name: _0x43e586.company.name || "",
-            email: _0x43e586.company.email || "",
-            mobile: _0x43e586.company.phone || _0x43e586.company.mobile || "",
-            website: _0x43e586.company.website || ""
-          };
-        }
-        const _0x48afaa = {
-          license_key: _0x4ae721,
-          machine_id: _0x2227c7,
-          customer_name: _0x43e586.name || "Licensed User",
-          plan_name: _0x43e586.plan || "standard",
-          modules: _0x43e586.modules || [],
-          max_devices: _0x43e586.max_devices || 5,
-          company_info: _0x492e95,
-          expires_at: _0x28a998.toISOString(),
-          activated_at: new Date().toISOString(),
-          status: "active",
-          app_version: app.getVersion()
-        };
-        logToFile("💾 License modules: " + JSON.stringify(_0x43e586.modules || []));
-        logToFile("💾 Company info: " + JSON.stringify(_0x492e95));
-        addLicenseSignature(_0x48afaa);
-        const _0x145cb4 = app.getPath("userData");
-        if (!fs.existsSync(_0x145cb4)) {
-          fs.mkdirSync(_0x145cb4, {
-            recursive: true
-          });
-        }
-        const _0x114bd0 = path.join(_0x145cb4, "license.json");
-        fs.writeFileSync(_0x114bd0, JSON.stringify(_0x48afaa, null, 2));
-        logToFile("💾 License saved to: " + _0x114bd0);
-        _0x113f21.push({
-          license_key: _0x4ae721,
-          machine_id: _0x2227c7,
-          activated_at: new Date().toISOString(),
-          app_version: app.getVersion()
-        });
-        fs.writeFileSync(_0x108ee3, JSON.stringify(_0x113f21, null, 2));
-        logToFile("💾 Recorded license activation: " + _0x4ae721 + " on machine " + _0x2227c7);
-        logToFile("✅ License activation completed successfully");
-        logToFile("✅ License activation completed successfully");
-        return {
-          success: true,
-          message: "License activated successfully!",
-          data: {
-            license_key: _0x4ae721,
-            customer_name: _0x48afaa.customer_name,
-            plan_name: _0x48afaa.plan_name,
-            expires_at: _0x48afaa.expires_at,
-            modules: _0x48afaa.modules,
-            max_devices: _0x48afaa.max_devices || 5,
-            company_info: _0x48afaa.company_info
-          }
-        };
-      } catch (_0x26ead9) {
-        logToFile("❌ Self-contained validation error: " + _0x26ead9.message);
-        logToFile("❌ Error stack: " + _0x26ead9.stack);
-        console.error("❌ License activation validation error:", _0x26ead9);
-        return {
-          success: false,
-          message: "Invalid license key format. Please check your license key.",
-          error_code: "VALIDATION_ERROR"
-        };
-      }
-    } else {
-      logToFile("❌ License key format not recognized");
+    // 1. Explicitly block legacy LW2 keys
+    if (_0x4ae721.startsWith("LW2.")) {
+      logToFile("⛔ Rejected legacy LW2 license key attempt");
       return {
         success: false,
-        message: "Invalid license key format. Please ensure you have a valid license key.",
+        message: "Purana license format (LW2) band ho chuka hai. Kripya admin se naya WAGrow License Key prapt karein.",
+        error_code: "LEGACY_KEY_DEPRECATED"
+      };
+    }
+
+    // 2. Reject anything that doesn't start with LW-
+    if (!_0x4ae721.startsWith("LW-")) {
+      logToFile("❌ Non-LW license key rejected: " + _0x4ae721);
+      return {
+        success: false,
+        message: "Invalid license key format. WAGrow license keys 'LW-' se shuru hote hain.",
         error_code: "INVALID_FORMAT"
       };
     }
-    const _0x1b4f45 = app.getPath("userData");
-    await fs.promises.mkdir(_0x1b4f45, {
-      recursive: true
-    });
-    const _0x13ab6b = path.join(_0x1b4f45, "license.json");
-    await fs.promises.writeFile(_0x13ab6b, JSON.stringify(licenseInfo, null, 2));
-    logToFile("💾 License saved to: " + _0x13ab6b);
-    if (licenseWindow) {
-      licenseWindow.close();
-    }
-    createWindow();
-    createMenu();
-    logToFile("✅ License activation completed successfully");
-    return {
-      success: true,
-      message: "License activated successfully!",
-      data: {
-        customer_name: licenseInfo.customer_name,
-        plan_name: licenseInfo.plan_name,
-        expires_at: licenseInfo.expires_at
+
+    // 3. Exclusively validate against Google Apps Script database
+    logToFile("🌐 Validating LW- key with Google Apps Script server: " + _0x4ae721);
+    const gasRes = await activateGasLicenseKey(_0x4ae721);
+    if (gasRes && gasRes.success) {
+      logToFile("✅ License activated successfully via Google Apps Script!");
+      if (licenseWindow) {
+        licenseWindow.close();
       }
-    };
-  } catch (_0x512f1a) {
-    logToFile("❌ Error activating license: " + _0x512f1a.message);
-    logToFile("❌ Error stack: " + _0x512f1a.stack);
+      createWindow();
+      createMenu();
+      return gasRes;
+    }
+
     return {
       success: false,
-      message: "Failed to activate license. Please check your license key and try again.",
-      error: _0x512f1a.message
+      message: gasRes?.message || "License activation failed. Yeh key Google Sheet database me registered nahi hai ya device limit reach ho chuki hai.",
+      error_code: gasRes?.error_code || "ACTIVATION_FAILED"
+    };
+  } catch (err) {
+    logToFile("❌ Error in license:activate: " + err.message);
+    return {
+      success: false,
+      message: "Activation error: " + err.message
     };
   }
 });
+
 ipcMain.handle("license:renew", async (_0x255c96, _0x1d47b0) => {
   try {
-    logToFile("🔄 Starting license renewal with renewed key: " + _0x1d47b0);
-    const _0x17b9c3 = generateMachineId();
-    logToFile("🔄 Generated machine ID: " + _0x17b9c3);
-    const _0x2ff926 = _0x1d47b0.startsWith("LW2.") && _0x1d47b0.split(".").length === 3;
-    const _0x1b427b = _0x1d47b0.startsWith("LW-") && _0x1d47b0.split("-").length >= 5;
-    const _0xf82ea0 = _0x2ff926 || _0x1b427b;
-    if (_0xf82ea0) {
-      logToFile("🔑 NewLic license detected, using NewLic renewal flow...");
-      const _0x44bba6 = require(resolveModulePath("services/newlic-license-service"));
-      const _0x544622 = await _0x44bba6.activateLicense(_0x1d47b0, _0x17b9c3);
-      if (!_0x544622.success) {
-        logToFile("❌ NewLic license renewal failed: " + _0x544622.message);
-        return {
-          success: false,
-          message: _0x544622.message || "Failed to renew license",
-          error_code: "NEWLIC_RENEWAL_FAILED"
-        };
-      }
-      logToFile("✅ NewLic license renewed successfully");
-      logToFile("✅ Renewed license data: " + JSON.stringify(_0x544622.data));
-      return {
-        success: true,
-        data: _0x544622.data,
-        message: "NewLic license renewed successfully"
-      };
-    }
-    const _0xd1313 = getAppDataPath();
-    const _0x2a62f1 = path.join(_0xd1313, "license.json");
-    const _0x891c0a = path.join(_0xd1313, "cloud-license.json");
-    const _0x2e1d75 = fs.existsSync(_0x2a62f1);
-    const _0x36cd90 = fs.existsSync(_0x891c0a);
-    if (!_0x2e1d75 && !_0x36cd90) {
-      logToFile("❌ No existing license found for renewal");
+    const rawKey = (_0x1d47b0 || "").trim();
+    logToFile("🔄 Starting license renewal with key: " + rawKey);
+
+    if (rawKey.startsWith("LW2.")) {
       return {
         success: false,
-        message: "No existing license found. Please activate a license first.",
-        error_code: "NO_EXISTING_LICENSE"
+        message: "Purana license format (LW2) band ho chuka hai. Kripya naya WAGrow License Key prapt karein.",
+        error_code: "LEGACY_KEY_DEPRECATED"
       };
     }
-    if (_0x36cd90) {
-      logToFile("🌐 Cloud license detected, using cloud renewal flow...");
-      const _0x39481e = require("../services/cloud-license-service");
-      const _0x22db16 = await _0x39481e.activateCloudLicense(_0x1d47b0, _0x17b9c3);
-      if (!_0x22db16.success) {
-        logToFile("❌ Cloud license renewal failed: " + _0x22db16.message);
-        return {
-          success: false,
-          message: _0x22db16.message || "Failed to renew cloud license",
-          error_code: "CLOUD_RENEWAL_FAILED"
-        };
-      }
-      const _0x13b955 = _0x22db16.data;
-      const _0x371b4c = new Date();
-      const _0x463bdd = new Date(_0x13b955.expires_at);
-      const _0x3e73db = Math.ceil((_0x463bdd - _0x371b4c) / 86400000);
-      logToFile("✅ Cloud license renewed successfully");
-      logToFile("✅ Renewed license data: " + JSON.stringify(_0x13b955));
-      return {
-        success: true,
-        data: {
-          license_key: _0x1d47b0,
-          customer_name: _0x13b955.customer_name,
-          plan_name: _0x13b955.plan_name || _0x13b955.plan,
-          expires_at: _0x13b955.expires_at,
-          expires_at_formatted: new Date(_0x13b955.expires_at).toLocaleDateString(),
-          status: _0x13b955.status || "active",
-          modules: _0x13b955.modules || [],
-          features: _0x13b955.features || [],
-          days_remaining: _0x3e73db,
-          validity_days: _0x3e73db,
-          duration_days: _0x3e73db,
-          is_trial: false,
-          isTrial: false,
-          isValid: true,
-          isUpgraded: false,
-          machine_id: _0x17b9c3,
-          activated_at: _0x13b955.activated_at,
-          renewed_at: new Date().toISOString(),
-          renewal_count: 1
-        },
-        message: "Cloud license renewed successfully"
-      };
-    }
-    if (!_0x2e1d75) {
-      logToFile("❌ No existing local license found for renewal");
+
+    if (!rawKey.startsWith("LW-")) {
       return {
         success: false,
-        message: "No existing license found. Please activate a license first.",
-        error_code: "NO_EXISTING_LICENSE"
+        message: "Invalid license key format. Key 'LW-' se shuru honi chahiye.",
+        error_code: "INVALID_KEY_FORMAT"
       };
     }
-    const _0x2690a3 = JSON.parse(fs.readFileSync(_0x2a62f1, "utf8"));
-    const _0x29d38b = _0x2690a3.license_key;
-    logToFile("🔄 Current license key: " + _0x29d38b);
-    logToFile("🔄 Renewed license key: " + _0x1d47b0);
-    const _0x50f36a = require(resolveModulePath("services/local-license-service"));
-    const _0x3f8710 = new _0x50f36a();
-    logToFile("📤 Validating renewed license: " + _0x1d47b0);
-    const _0x2cb917 = await _0x3f8710.validateSelfContainedLicense(_0x1d47b0);
-    if (!_0x2cb917.success) {
-      logToFile("❌ License validation failed: " + _0x2cb917.error);
-      return {
-        success: false,
-        message: _0x2cb917.error || "Invalid license key",
-        error_code: "INVALID_LICENSE"
-      };
-    }
-    const _0x384dc3 = (_0x2690a3.customer_name || "").trim().toLowerCase();
-    const _0x470347 = (_0x2cb917.customer_name || "").trim().toLowerCase();
-    if (_0x384dc3 && _0x470347 && _0x384dc3 !== _0x470347) {
-      logToFile("❌ License renewal failed: Customer name mismatch");
-      logToFile("   Current: \"" + _0x2690a3.customer_name + "\" (normalized: \"" + _0x384dc3 + "\")");
-      logToFile("   Renewed: \"" + _0x2cb917.customer_name + "\" (normalized: \"" + _0x470347 + "\")");
-      return {
-        success: false,
-        message: "The renewed license is not for the same customer. Current: \"" + _0x2690a3.customer_name + "\", Renewed: \"" + _0x2cb917.customer_name + "\". Please contact support.",
-        error_code: "CUSTOMER_MISMATCH"
-      };
-    }
-    if (_0x2cb917.machine_id && _0x2cb917.machine_id !== _0x17b9c3) {
-      logToFile("❌ License renewal failed: Machine ID mismatch");
-      logToFile("   Current machine: " + _0x17b9c3);
-      logToFile("   License machine: " + _0x2cb917.machine_id);
-      return {
-        success: false,
-        message: "The renewed license is for a different machine. Please generate a renewal license for this machine.",
-        error_code: "MACHINE_ID_MISMATCH"
-      };
-    }
-    const _0x25976e = new Date();
-    const _0xdd6437 = new Date(_0x2cb917.expires_at);
-    const _0x2afb08 = Math.ceil((_0xdd6437 - _0x25976e) / 86400000);
-    _0x3f8710.updateSelfContainedLicenseActivation(_0x1d47b0, _0x17b9c3, app.getVersion());
-    const _0x4acdd3 = {
-      license_key: _0x1d47b0,
-      customer_name: _0x2cb917.customer_name,
-      expires_at: _0x2cb917.expires_at,
-      machine_id: _0x17b9c3,
-      activated_at: _0x2690a3.activated_at,
-      renewed_at: new Date().toISOString(),
-      status: _0x2cb917.status,
-      plan_name: _0x2cb917.plan_type,
-      modules: _0x2cb917.modules || [],
-      duration_days: _0x2afb08,
-      features: _0x2690a3.features || [],
-      isTrial: false,
-      isUpgraded: _0x2690a3.isUpgraded || false,
-      days_remaining: _0x2afb08,
-      previous_license: _0x29d38b,
-      renewal_count: (_0x2690a3.renewal_count || 0) + 1
-    };
-    fs.writeFileSync(_0x2a62f1, JSON.stringify(_0x4acdd3, null, 2));
-    logToFile("✅ License renewed and saved successfully");
-    logToFile("✅ New license data: " + JSON.stringify(_0x4acdd3));
-    return {
-      success: true,
-      data: {
-        license_key: _0x1d47b0,
-        customer_name: _0x2cb917.customer_name,
-        plan_name: _0x2cb917.plan_type,
-        expires_at: _0x2cb917.expires_at,
-        expires_at_formatted: new Date(_0x2cb917.expires_at).toLocaleDateString(),
-        status: _0x2cb917.status,
-        modules: _0x2cb917.modules || [],
-        days_remaining: _0x2afb08,
-        validity_days: _0x2afb08,
-        is_trial: false,
-        isTrial: false,
-        isValid: true
-      },
-      message: "License renewed successfully"
-    };
+
+    return await activateGasLicenseKey(rawKey);
   } catch (_0x51fac4) {
     logToFile("❌ License renewal error: " + _0x51fac4.message);
-    logToFile("❌ Error stack: " + _0x51fac4.stack);
     return {
       success: false,
       message: "License renewal failed: " + _0x51fac4.message,
-      error_code: "RENEWAL_ERROR",
-      error_details: _0x51fac4.stack
+      error_code: "RENEWAL_ERROR"
     };
   }
 });
+
 ipcMain.handle("license:upgrade", async (_0xbb1d2b, _0x5ba171) => {
   try {
-    logToFile("🔄 Starting license upgrade with new key: " + _0x5ba171);
-    const _0x4d015c = generateMachineId();
-    logToFile("🔄 Generated machine ID: " + _0x4d015c);
-    const _0x584edf = _0x5ba171.startsWith("LW2.") && _0x5ba171.split(".").length === 3;
-    const _0x25d644 = _0x5ba171.startsWith("LW-") && _0x5ba171.split("-").length >= 5;
-    if (_0x584edf || _0x25d644) {
-      logToFile("🔑 NewLic license detected, using NewLic activation flow for upgrade...");
-      const _0x1b7668 = require(resolveModulePath("services/newlic-license-service"));
-      const _0x50926f = await _0x1b7668.activateLicense(_0x5ba171, _0x4d015c);
-      if (!_0x50926f.success) {
-        logToFile("❌ NewLic license upgrade failed: " + _0x50926f.message);
-        return {
-          success: false,
-          message: _0x50926f.message || "Failed to upgrade license",
-          error_code: "NEWLIC_UPGRADE_FAILED"
-        };
-      }
-      logToFile("✅ NewLic license upgraded successfully");
-      return {
-        success: true,
-        data: _0x50926f.data,
-        message: "License upgraded successfully"
-      };
-    }
-    const _0x5d0c43 = getAppDataPath();
-    const _0x54ef5f = path.join(_0x5d0c43, "license.json");
-    if (!fs.existsSync(_0x54ef5f)) {
-      logToFile("❌ No existing license found for upgrade");
+    const rawKey = (_0x5ba171 || "").trim();
+    logToFile("🔄 Starting license upgrade with key: " + rawKey);
+
+    if (rawKey.startsWith("LW2.")) {
       return {
         success: false,
-        message: "No existing license found. Please activate a license first.",
-        error_code: "NO_EXISTING_LICENSE"
+        message: "Purana license format (LW2) band ho chuka hai. Kripya naya WAGrow License Key prapt karein.",
+        error_code: "LEGACY_KEY_DEPRECATED"
       };
     }
-    const _0x389717 = JSON.parse(fs.readFileSync(_0x54ef5f, "utf8"));
-    const _0x35a0e3 = _0x389717.license_key;
-    logToFile("🔄 Current license key: " + _0x35a0e3);
-    const _0x52c837 = require(resolveModulePath("services/local-license-service"));
-    const _0x512722 = new _0x52c837();
-    logToFile("📤 Activating new license locally: " + _0x5ba171);
-    const _0x482ba3 = await _0x512722.activateLicense(_0x5ba171, _0x4d015c, app.getVersion());
-    logToFile("📥 Upgrade activation result: " + JSON.stringify(_0x482ba3));
-    if (_0x482ba3.success && _0x482ba3.data) {
-      const _0x3bda0 = {
-        license_key: _0x5ba171,
-        customer_name: _0x482ba3.data.customer_name,
-        expires_at: _0x482ba3.data.expires_at,
-        machine_id: _0x4d015c,
-        activated_at: new Date().toISOString(),
-        status: _0x482ba3.data.status,
-        plan_name: _0x482ba3.data.plan_name,
-        modules: _0x482ba3.data.modules || [],
-        duration_days: _0x482ba3.data.validity_days,
-        features: [],
-        isTrial: _0x482ba3.data.is_trial || false,
-        isUpgraded: true,
-        days_remaining: _0x482ba3.data.days_remaining,
-        previous_license: _0x35a0e3
-      };
-      fs.writeFileSync(_0x54ef5f, JSON.stringify(_0x3bda0, null, 2));
-      logToFile("✅ License upgraded and saved successfully");
-      logToFile("✅ New license data: " + JSON.stringify(_0x3bda0));
-      return {
-        success: true,
-        data: _0x482ba3.data,
-        message: "License upgraded successfully"
-      };
-    } else {
-      logToFile("❌ License upgrade failed: " + _0x482ba3.message);
+
+    if (!rawKey.startsWith("LW-")) {
       return {
         success: false,
-        message: _0x482ba3.message || "License upgrade failed",
-        error_code: _0x482ba3.error_code
+        message: "Invalid license key format. Key 'LW-' se shuru honi chahiye.",
+        error_code: "INVALID_KEY_FORMAT"
       };
     }
+
+    return await activateGasLicenseKey(rawKey);
   } catch (_0x356c6e) {
     logToFile("❌ License upgrade error: " + _0x356c6e.message);
     return {
       success: false,
-      message: "Unable to upgrade license. Please check your internet connection and try again, or contact your administrator for assistance.",
-      error: _0x356c6e.message
+      message: "Unable to upgrade license: " + _0x356c6e.message,
+      error_code: "UPGRADE_ERROR"
     };
   }
 });
+
 ipcMain.handle("license:register-trial", async (_0x28c5c8, _0x4ba8d6) => {
-  try {
-    const _0x29eea5 = generateMachineId();
-    logToFile("🔑 Attempting trial registration for: " + _0x4ba8d6.email + " with machine ID: " + _0x29eea5);
-    const _0x15a5ab = require(resolveModulePath("services/local-license-service"));
-    const _0x2aef5e = new _0x15a5ab();
-    const _0x220cc7 = await _0x2aef5e.registerTrial(_0x4ba8d6);
-    logToFile("📥 Trial registration result: " + JSON.stringify(_0x220cc7));
-    if (_0x220cc7.success) {
-      const _0x4e9d16 = {
-        license_key: _0x220cc7.data.license_key,
-        customer_name: _0x220cc7.data.customer_name,
-        expires_at: _0x220cc7.data.expires_at,
-        machine_id: _0x29eea5,
-        registered_at: new Date().toISOString(),
-        plan_name: "trial",
-        isTrial: true,
-        status: "active",
-        validity_days: _0x220cc7.data.validity_days
-      };
-      const _0x12ef81 = getAppDataPath();
-      if (!fs.existsSync(_0x12ef81)) {
-        fs.mkdirSync(_0x12ef81, {
-          recursive: true
-        });
-      }
-      const _0x2cef64 = path.join(_0x12ef81, "license.json");
-      fs.writeFileSync(_0x2cef64, JSON.stringify(_0x4e9d16, null, 2));
-      logToFile("✅ Trial license registered successfully: " + _0x220cc7.data.license_key);
-    } else {
-      logToFile("❌ Trial registration failed: " + _0x220cc7.message);
-    }
-    return _0x220cc7;
-  } catch (_0x51c118) {
-    logToFile("❌ Error registering trial license: " + _0x51c118.message);
-    logToFile("❌ Error stack: " + _0x51c118.stack);
-    return {
-      success: false,
-      message: "Unable to register trial license. Please check your internet connection and try again, or contact your administrator for assistance.",
-      error: _0x51c118.message
-    };
-  }
+  return {
+    success: false,
+    message: "Purana trial registration band ho chuka hai. Kripya app me naye trial form ka upayog karein.",
+    error_code: "LEGACY_TRIAL_DEPRECATED"
+  };
 });
 
 // ── WAGrow GAS Trial Handler ─────────────────────────────────────────────────
@@ -2682,14 +2204,6 @@ ipcMain.handle("license:validate", async _0x2a2478 => {
     const _0x48029e = path.join(_0x1b551b, "license.enc");
     const _0x5efc76 = path.join(_0x1b551b, "license.json");
     const _0x2ac49e = generateMachineId();
-    let _0x26af68 = null;
-    try {
-      const _0x47a2ea = require(resolveModulePath("services/local-license-service"));
-      _0x26af68 = new _0x47a2ea();
-    } catch (_0x50dc66) {
-      logToFile("⚠️ Local license service not available: " + _0x50dc66.message);
-      logToFile("🔄 Will use fallback self-contained license validation");
-    }
     let _0x2cb877 = null;
     let _0x45e68f = null;
 
@@ -2734,18 +2248,14 @@ ipcMain.handle("license:validate", async _0x2a2478 => {
       }
     }
 
-    // 3. Check Keygen database fallback if still not found
-    if (!_0x2cb877 && _0x26af68) {
-      try {
-        const keygenLics = _0x26af68.loadKeygenLicenses();
-        for (const lic of keygenLics) {
-          if (lic.activations && lic.activations.some(a => a.machine_id === _0x2ac49e)) {
-            _0x2cb877 = lic;
-            _0x45e68f = lic.license_key;
-            break;
-          }
-        }
-      } catch (_) {}
+    // If license is in legacy LW2 format, permanently reject it
+    if (_0x2cb877 && _0x2cb877.license_key && _0x2cb877.license_key.startsWith("LW2.")) {
+      logToFile("🚨 Legacy LW2 license rejected in license:validate");
+      return {
+        success: false,
+        message: "Purana license format (LW2) band ho chuka hai. Kripya naya WAGrow license activate karein.",
+        error_code: "LEGACY_KEY_DEPRECATED"
+      };
     }
 
     // If no license found anywhere
@@ -2930,170 +2440,92 @@ ipcMain.handle("license:save-local-info", (_0xeebb65, _0x342c09) => {
   }
 });
 ipcMain.handle("license:check-machine", async _0x2180ca => {
-  try {
-    const _0x25c5bd = generateMachineId();
-    logToFile("🔍 Checking machine ID: " + _0x25c5bd);
-    const _0x5d05c0 = require(resolveModulePath("services/local-license-service"));
-    const _0x2f5da1 = new _0x5d05c0();
-    const _0x590989 = await _0x2f5da1.checkMachineActivation(_0x25c5bd);
-    logToFile("🔍 Machine check result: " + JSON.stringify(_0x590989));
-    return _0x590989;
-  } catch (_0x166f34) {
-    logToFile("❌ Error checking machine ID: " + _0x166f34.message);
-    return {
-      success: false,
-      message: "Unable to verify machine activation. Please check your internet connection and try again.",
-      error: _0x166f34.message,
-      error_code: "LOCAL_CHECK_ERROR"
-    };
-  }
+  return {
+    success: true,
+    has_license: false,
+    message: "Machine check completed."
+  };
 });
+
 ipcMain.handle("license:check-status", async (_0x21b340, _0x3cc0e1) => {
   try {
-    _0x3cc0e1 = _0x3cc0e1.trim();
+    _0x3cc0e1 = (_0x3cc0e1 || "").trim();
     logToFile("🔍 Checking license status for: " + _0x3cc0e1);
 
     if (_0x3cc0e1.startsWith("LW2.")) {
-      try {
-        const newlicSvc = require(resolveModulePath("services/newlic-license-service"));
-        const v2Res = newlicSvc._validateLicenseKeyV2(_0x3cc0e1);
-        if (v2Res.valid) {
-          return {
-            success: true,
-            data: {
-              status: "active",
-              expires_at: v2Res.expires_at ? v2Res.expires_at.toISOString() : null,
-              customer_name: v2Res.data.name || "Licensed User",
-              plan_type: v2Res.data.plan || "standard",
-              plan_name: v2Res.data.plan || "standard",
-              modules: v2Res.data.modules || []
-            }
-          };
-        }
-      } catch (_) {}
+      return {
+        success: false,
+        error: "Purana license format (LW2) band ho chuka hai. Kripya naya WAGrow License Key use karein.",
+        error_code: "LEGACY_KEY_DEPRECATED"
+      };
     }
 
-    if (_0x3cc0e1.startsWith("LW-")) {
-      logToFile("🌐 Checking LW- key status with Google Apps Script server: " + _0x3cc0e1);
-      try {
-        const gasUrl = "https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec";
-        const machineId = generateMachineId();
-        const userCode = "USER-" + machineId.slice(0, 8) + "-" + machineId.slice(8, 16);
-        const fetchWithRedirect = async (url, options, maxRedirects = 5) => {
-          let currentUrl = url;
-          for (let i = 0; i < maxRedirects; i++) {
-            const resp = await fetch(currentUrl, options);
-            if ([301, 302, 303, 307, 308].includes(resp.status)) {
-              const location = resp.headers.get("location");
-              if (location) {
-                currentUrl = location;
-                options = { method: "GET" };
-                continue;
-              }
-            }
-            return resp;
+    if (!_0x3cc0e1.startsWith("LW-")) {
+      return {
+        success: false,
+        error: "Invalid license key format. Key 'LW-' se shuru honi chahiye.",
+        error_code: "INVALID_FORMAT"
+      };
+    }
+
+    // Only validate via Google Apps Script database
+    logToFile("🌐 Checking LW- key status with Google Apps Script server: " + _0x3cc0e1);
+    const gasUrl = "https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec";
+    const machineId = generateMachineId();
+    const userCode = "USER-" + machineId.slice(0, 8) + "-" + machineId.slice(8, 16);
+    const fetchWithRedirect = async (url, options, maxRedirects = 5) => {
+      let currentUrl = url;
+      for (let i = 0; i < maxRedirects; i++) {
+        const resp = await fetch(currentUrl, options);
+        if ([301, 302, 303, 307, 308].includes(resp.status)) {
+          const location = resp.headers.get("location");
+          if (location) {
+            currentUrl = location;
+            options = { method: "GET" };
+            continue;
           }
-          throw new Error("Too many redirects");
-        };
-
-        const res = await fetchWithRedirect(`${gasUrl}?action=validateLicense&key=${encodeURIComponent(_0x3cc0e1)}&machine_id=${encodeURIComponent(userCode)}`);
-        const text = await res.text();
-        const gasJson = JSON.parse(text);
-        if (gasJson && gasJson.valid && gasJson.data) {
-          logToFile("✅ GAS check-status passed for: " + gasJson.data.customer_name);
-          const allModules = [
-            "proxies", "single-message", "templates", "contacts", "bulk-messages",
-            "warmer", "opt-out-management", "auto-reply", "chatbot", "support-bot",
-            "ai-chatbot", "call-responder", "follow-up", "recall-bot", "group-grabber",
-            "manage-group", "reports", "devices", "REST API", "incoming-messages",
-            "live-chat", "tg-dashboard", "tg-accounts", "tg-live-chat", "tg-broadcast",
-            "tg-groups", "tg-auto-responder", "tg-ai-agent"
-          ];
-          return {
-            success: true,
-            data: {
-              status: "active",
-              expires_at: gasJson.data.expires_at,
-              customer_name: gasJson.data.customer_name || "Licensed User",
-              plan_type: gasJson.data.plan_type || "Pro",
-              plan_name: gasJson.data.plan_name || "Pro",
-              modules: allModules
-            }
-          };
-        } else if (gasJson && !gasJson.valid && gasJson.error_code && gasJson.error_code !== "LICENSE_NOT_FOUND") {
-          return {
-            success: false,
-            error: gasJson.error,
-            error_code: gasJson.error_code
-          };
         }
-      } catch (gasCheckErr) {
-        logToFile("⚠️ GAS check-status network error: " + gasCheckErr.message);
+        return resp;
       }
-    }
+      throw new Error("Too many redirects");
+    };
 
-    const _0x3fbf5a = _0x3cc0e1.split("-");
-    if (_0x3fbf5a.length === 5 && _0x3fbf5a[0] === "LW") {
-      logToFile("🔍 Detected self-contained license format (Keygen generated)");
-      try {
-        const [_0x2cc356, _0x425b86, _0x5be9e1, _0x329f15, _0x42f4ca] = _0x3fbf5a;
-        const _0x379d6e = require("crypto");
-        logToFile("🔍 Parts: prefix=" + _0x2cc356 + ", encodedData=" + _0x425b86 + ", expiryHex=" + _0x5be9e1 + ", checksum=" + _0x329f15 + ", signature=" + _0x42f4ca);
-        const _0x213790 = _0x425b86 + "-" + _0x5be9e1;
-        const _0x3d650f = _0x379d6e.createHash("md5").update(_0x213790).digest("hex").substring(0, 4).toUpperCase();
-        logToFile("🔍 Checksum validation: expected=" + _0x3d650f + ", provided=" + _0x329f15);
-        if (_0x329f15 !== _0x3d650f) {
-          logToFile("❌ Checksum validation failed");
-          return {
-            success: false,
-            error: "Invalid license key. Checksum verification failed.",
-            error_code: "INVALID_CHECKSUM"
-          };
+    const res = await fetchWithRedirect(`${gasUrl}?action=validateLicense&key=${encodeURIComponent(_0x3cc0e1)}&machine_id=${encodeURIComponent(userCode)}`);
+    const text = await res.text();
+    const gasJson = JSON.parse(text);
+    if (gasJson && gasJson.valid && gasJson.data) {
+      logToFile("✅ GAS check-status passed for: " + gasJson.data.customer_name);
+      const allModules = [
+        "proxies", "single-message", "templates", "contacts", "bulk-messages",
+        "warmer", "opt-out-management", "auto-reply", "chatbot", "support-bot",
+        "ai-chatbot", "call-responder", "follow-up", "recall-bot", "group-grabber",
+        "manage-group", "reports", "devices", "REST API", "incoming-messages",
+        "live-chat", "tg-dashboard", "tg-accounts", "tg-live-chat", "tg-broadcast",
+        "tg-groups", "tg-auto-responder", "tg-ai-agent"
+      ];
+      return {
+        success: true,
+        data: {
+          status: "active",
+          expires_at: gasJson.data.expires_at,
+          customer_name: gasJson.data.customer_name || "Licensed User",
+          plan_type: gasJson.data.plan_type || "Pro",
+          plan_name: gasJson.data.plan_name || "Pro",
+          modules: allModules
         }
-        const _0x27bc63 = JSON.parse(Buffer.from(_0x425b86, "hex").toString("utf8"));
-        const _0x5c5259 = parseInt(_0x5be9e1, 16);
-        const _0x3a9f5a = new Date(_0x5c5259 * 1000);
-        const _0xe975c1 = new Date();
-        logToFile("🔍 License data: " + JSON.stringify(_0x27bc63));
-        logToFile("🔍 Expiry: " + _0x3a9f5a.toISOString() + ", Now: " + _0xe975c1.toISOString());
-        if (_0xe975c1 > _0x3a9f5a) {
-          logToFile("❌ License has expired");
-          return {
-            success: false,
-            error: "License has expired",
-            error_code: "LICENSE_EXPIRED"
-          };
-        }
-        logToFile("✅ Self-contained license validation successful");
-        return {
-          success: true,
-          data: {
-            status: "active",
-            expires_at: _0x3a9f5a.toISOString(),
-            customer_name: _0x27bc63.name || "Licensed User",
-            plan_type: _0x27bc63.plan || "standard",
-            modules: _0x27bc63.modules || []
-          }
-        };
-      } catch (_0x352674) {
-        logToFile("❌ Self-contained license validation failed: " + _0x352674.message);
-        return {
-          success: false,
-          error: "License validation failed: " + _0x352674.message,
-          error_code: "VALIDATION_ERROR"
-        };
-      }
+      };
+    } else {
+      return {
+        success: false,
+        error: gasJson?.error || "License not found or inactive in database",
+        error_code: gasJson?.error_code || "INVALID_LICENSE"
+      };
     }
-    const _0x48aac1 = require(resolveModulePath("services/local-license-service"));
-    const _0x78af6a = new _0x48aac1();
-    const _0x1e9170 = await _0x78af6a.checkLicenseStatus(_0x3cc0e1);
-    logToFile("🔍 License status result: " + JSON.stringify(_0x1e9170));
-    return _0x1e9170;
   } catch (_0x3bc33c) {
     logToFile("❌ Error checking license status: " + _0x3bc33c.message);
     return {
       success: false,
-      message: "Unable to check license status. Please check your internet connection and try again, or contact your administrator for assistance.",
+      message: "Unable to check license status. Please check your internet connection and try again.",
       error: _0x3bc33c.message
     };
   }
@@ -3209,52 +2641,19 @@ ipcMain.handle("license:extract-company-info", async (_0x2f1466, _0x35b5bb) => {
     return null;
   }
 });
-ipcMain.handle("cloud-license:activate", async (_0x2a8536, _0x3e3f27) => {
-  try {
-    if (!cloudLicenseService) {
-      return {
-        success: false,
-        error: "Cloud license service not available"
-      };
-    }
-    const {
-      licenseKey: _0x5c098d
-    } = _0x3e3f27;
-    const _0x580a86 = generateMachineId();
-    logToFile("🔐 Activating cloud license: " + _0x5c098d);
-    const _0x1330b2 = await cloudLicenseService.activateCloudLicense(_0x5c098d, _0x580a86);
-    if (_0x1330b2.success) {
-      logToFile("✅ Cloud license activated successfully");
-      cloudLicenseService.startPeriodicValidation();
-    } else {
-      logToFile("❌ Cloud license activation failed: " + _0x1330b2.message);
-    }
-    return _0x1330b2;
-  } catch (_0x59ca95) {
-    logToFile("❌ Error activating cloud license: " + _0x59ca95.message);
-    return {
-      success: false,
-      error: _0x59ca95.message
-    };
-  }
+ipcMain.handle("cloud-license:activate", async () => {
+  return {
+    success: false,
+    message: "Purana cloud license system band ho chuka hai. Kripya naya WAGrow License Key use karein.",
+    error: "LEGACY_CLOUD_DISABLED"
+  };
 });
-ipcMain.handle("cloud-license:validate", async _0x39ca9a => {
-  try {
-    if (!cloudLicenseService) {
-      return {
-        success: false,
-        error: "Cloud license service not available"
-      };
-    }
-    const _0x48a50b = await cloudLicenseService.validateCloudLicense();
-    return _0x48a50b;
-  } catch (_0x4ef0d2) {
-    logToFile("❌ Error validating cloud license: " + _0x4ef0d2.message);
-    return {
-      success: false,
-      error: _0x4ef0d2.message
-    };
-  }
+ipcMain.handle("cloud-license:validate", async () => {
+  return {
+    valid: false,
+    success: false,
+    message: "Legacy cloud license system is permanently disabled."
+  };
 });
 ipcMain.handle("cloud-license:get-info", async _0x33fd67 => {
   try {
@@ -3321,40 +2720,37 @@ function getHeartbeatValidator() {
 ipcMain.handle("newlic-license:activate", async (_0x57fa9e, _0x28f52f) => {
   try {
     const _0x37ca74 = ((_0x28f52f && _0x28f52f.licenseKey) || "").replace(/\s+/g, "");
-    const _0x43d3e4 = generateMachineId();
     logToFile("🔑 NewLic: Activating license: " + _0x37ca74);
 
-    if (_0x37ca74.startsWith("LW-")) {
-      const gasRes = await activateGasLicenseKey(_0x37ca74);
-      if (gasRes && gasRes.success) {
-        logToFile("✅ NewLic: GAS License activated successfully");
-        Object.keys(moduleValidationCache).forEach(_0x30fa4c => delete moduleValidationCache[_0x30fa4c]);
-      } else {
-        logToFile("❌ NewLic: GAS License activation failed: " + (gasRes?.message || ""));
-      }
-      return gasRes;
+    if (_0x37ca74.startsWith("LW2.")) {
+      return {
+        success: false,
+        message: "Purana license format (LW2) band ho chuka hai. Kripya naya WAGrow License Key use karein.",
+        error_code: "LEGACY_KEY_DEPRECATED"
+      };
     }
 
-    const _0x2fb799 = await newlicLicenseService.activateLicense(_0x37ca74, _0x43d3e4);
-    if (_0x2fb799.success) {
-      logToFile("✅ NewLic: License activated successfully");
-      Object.keys(moduleValidationCache).forEach(_0x30fa4c => delete moduleValidationCache[_0x30fa4c]);
-      try {
-        const _0x348e96 = getHeartbeatValidator();
-        _0x348e96.start(_0x37ca74, _0x43d3e4, "https://license.getleadwave.in");
-        logToFile("🔐 Heartbeat validator started");
-      } catch (_0x964d11) {
-        logToFile("⚠️ Failed to start heartbeat validator: " + _0x964d11.message);
-      }
-    } else {
-      logToFile("❌ NewLic: License activation failed: " + _0x2fb799.message);
+    if (!_0x37ca74.startsWith("LW-")) {
+      return {
+        success: false,
+        message: "Amanaya license key format. Key 'LW-' se shuru honi chahiye.",
+        error_code: "INVALID_KEY_FORMAT"
+      };
     }
-    return _0x2fb799;
+
+    const gasRes = await activateGasLicenseKey(_0x37ca74);
+    if (gasRes && gasRes.success) {
+      logToFile("✅ NewLic: GAS License activated successfully");
+      Object.keys(moduleValidationCache).forEach(_0x30fa4c => delete moduleValidationCache[_0x30fa4c]);
+    } else {
+      logToFile("❌ NewLic: GAS License activation failed: " + (gasRes?.message || ""));
+    }
+    return gasRes;
   } catch (_0x2be300) {
     logToFile("❌ NewLic: Error activating license: " + _0x2be300.message);
     return {
       success: false,
-      message: "Failed to activate license"
+      message: "Failed to activate license: " + _0x2be300.message
     };
   }
 });
@@ -3381,6 +2777,15 @@ ipcMain.handle("newlic-license:validate", async _0x4fa321 => {
     }
     if (!activeLic) {
       activeLic = newlicLicenseService.get("license");
+    }
+
+    if (activeLic && (activeLic.license_key?.startsWith("LW2.") || activeLic.key?.startsWith("LW2."))) {
+      logToFile("🚨 Legacy LW2 license rejected in newlic-license:validate");
+      return {
+        valid: false,
+        message: "Purana license format (LW2) band ho chuka hai. Kripya naya WAGrow license activate karein.",
+        error_code: "LEGACY_KEY_DEPRECATED"
+      };
     }
 
     if (activeLic && (activeLic.expires_at || activeLic.expiresAt)) {
@@ -3472,58 +2877,44 @@ ipcMain.handle("newlic-license:validate-module", async (_0x58007b, _0x10a18d) =>
         cached: true
       };
     }
-    const _0xb1e980 = newlicLicenseService.getLicenseInfo();
-    if (!_0xb1e980 || !_0xb1e980.key) {
+    const appDataDir = getAppDataPath();
+    const encPath = path.join(appDataDir, "license.enc");
+    const jsonPath = path.join(appDataDir, "license.json");
+    let activeLic = null;
+    if (fs.existsSync(encPath)) {
+      try {
+        const encData = fs.readFileSync(encPath, "utf8");
+        activeLic = newlicLicenseService._decrypt(encData);
+      } catch (_) {}
+    }
+    if (!activeLic && fs.existsSync(jsonPath)) {
+      try {
+        activeLic = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+      } catch (_) {}
+    }
+    if (!activeLic) {
+      activeLic = newlicLicenseService.get("license");
+    }
+
+    if (!activeLic || (activeLic.license_key?.startsWith("LW2.") || activeLic.key?.startsWith("LW2."))) {
       return {
         valid: false,
-        reason: "no_license"
+        reason: "no_valid_license"
       };
     }
-    const _0x10e227 = generateMachineId();
-    const _0x31e508 = new AbortController();
-    const _0x1f43a4 = setTimeout(() => _0x31e508.abort(), 5000);
-    try {
-      const _0x427f9f = await fetch("https://license.getleadwave.in/api/licenses/heartbeat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          license_key: _0xb1e980.key,
-          machine_id: _0x10e227
-        }),
-        signal: _0x31e508.signal
-      });
-      clearTimeout(_0x1f43a4);
-      const _0x15eb8e = await _0x427f9f.json();
-      const _0x1ae6a5 = _0x15eb8e.valid === true;
-      moduleValidationCache[_0x10a18d] = {
-        validatedAt: _0x53eb64,
-        valid: _0x1ae6a5
-      };
-      if (!_0x1ae6a5) {
-        logToFile("❌ Module validation failed for [" + _0x10a18d + "]: " + _0x15eb8e.message);
-      } else {
-        logToFile("✅ Module validation passed for [" + _0x10a18d + "]");
-      }
-      return {
-        valid: _0x1ae6a5,
-        reason: _0x15eb8e.message || null
-      };
-    } catch (_0x5639fa) {
-      clearTimeout(_0x1f43a4);
-      const _0x475f8d = getHeartbeatValidator();
-      const _0x12ccdc = _0x475f8d ? _0x475f8d.licenseValid : false;
-      logToFile("⚠️ Module validation network error for [" + _0x10a18d + "] — using heartbeat state: " + _0x12ccdc);
-      moduleValidationCache[_0x10a18d] = {
-        validatedAt: _0x53eb64 - (MODULE_VALIDATION_CACHE_TTL - 300000),
-        valid: _0x12ccdc
-      };
-      return {
-        valid: _0x12ccdc,
-        reason: "network_unavailable"
-      };
-    }
+
+    const exp = activeLic.expires_at || activeLic.expiresAt;
+    const isExpired = exp ? new Date(exp).getTime() < Date.now() : false;
+    const isValid = !isExpired;
+
+    moduleValidationCache[_0x10a18d] = {
+      validatedAt: _0x53eb64,
+      valid: isValid
+    };
+    return {
+      valid: isValid,
+      reason: isValid ? null : "license_expired"
+    };
   } catch (_0x6a48b1) {
     logToFile("❌ Module validation error for [" + _0x10a18d + "]: " + _0x6a48b1.message);
     return {
@@ -6568,22 +5959,6 @@ app.whenReady().then(() => {
   }
   if (backgroundLicenseValidator) {
     backgroundLicenseValidator.start();
-  }
-  if (cloudLicenseService && cloudLicenseService.hasCloudLicense()) {
-    logToFile("🔐 Cloud license detected - starting periodic validation");
-    cloudLicenseService.startPeriodicValidation();
-  }
-  if (newlicLicenseService && newlicLicenseService.getLicenseInfo()) {
-    try {
-      const _0x4f340d = newlicLicenseService.get("license");
-      if (_0x4f340d && _0x4f340d.key && _0x4f340d.machineId) {
-        const _0x32e28d = getHeartbeatValidator();
-        _0x32e28d.start(_0x4f340d.key, _0x4f340d.machineId, "https://license.getleadwave.in");
-        logToFile("🔐 Heartbeat validator started for existing license");
-      }
-    } catch (_0x22f74d) {
-      logToFile("⚠️ Failed to start heartbeat validator on startup: " + _0x22f74d.message);
-    }
   }
 });
 ipcMain.handle("warmer:create-campaign", async (_0xeb5c96, _0xa353b1) => {

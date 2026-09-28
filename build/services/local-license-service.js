@@ -30,15 +30,6 @@ class LocalLicenseService {
     return path.join(_0x3fc1a4, "licenses.json");
   }
   loadKeygenLicenses() {
-    if (fs.existsSync(this.keygenDbPath)) {
-      try {
-        const _0x455c03 = fs.readFileSync(this.keygenDbPath, "utf8");
-        return JSON.parse(_0x455c03);
-      } catch (_0x33e30b) {
-        console.error("Error loading Keygen licenses:", _0x33e30b);
-        return [];
-      }
-    }
     return [];
   }
   saveKeygenLicenses(_0x589ec1) {
@@ -73,163 +64,18 @@ class LocalLicenseService {
     return crypto.createHash("sha256").update(_0x21daae).digest("hex").substring(0, 16).toUpperCase();
   }
   async checkLicenseStatus(_0xe6b9c) {
-    try {
-      const _0x37edce = this.validateSelfContainedLicense(_0xe6b9c);
-      if (_0x37edce.success) {
-        return {
-          success: true,
-          data: {
-            status: _0x37edce.status,
-            expires_at: _0x37edce.expires_at,
-            customer_name: _0x37edce.customer_name,
-            plan_type: _0x37edce.plan_type
-          }
-        };
-      }
-      if (!this.validateLicenseKeyFormat(_0xe6b9c)) {
-        return {
-          success: false,
-          error: "Invalid license key format",
-          error_code: "INVALID_FORMAT"
-        };
-      }
-      const _0x33e415 = this.loadKeygenLicenses();
-      let _0x1a81b9 = _0x33e415.find(_0xe83210 => _0xe83210.license_key === _0xe6b9c);
-      if (!_0x1a81b9) {
-        return {
-          success: false,
-          error: "License not found",
-          error_code: "LICENSE_NOT_FOUND"
-        };
-      }
-      const _0x24a468 = new Date();
-      const _0x5ab1a6 = new Date(_0x1a81b9.expires_at);
-      const _0x334ca4 = _0x24a468 > _0x5ab1a6;
-      return {
-        success: true,
-        data: {
-          status: _0x334ca4 ? "expired" : _0x1a81b9.status,
-          is_activated: _0x1a81b9.activations.length > 0,
-          can_be_activated: !_0x334ca4 && _0x1a81b9.status === "active",
-          expires_at: _0x1a81b9.expires_at,
-          customer_name: _0x1a81b9.customer_name,
-          plan_type: _0x1a81b9.plan_type
-        }
-      };
-    } catch (_0x381fd9) {
-      return {
-        success: false,
-        error: _0x381fd9.message,
-        error_code: "STATUS_CHECK_ERROR"
-      };
-    }
+    return {
+      success: false,
+      error: "Legacy license check is permanently disabled. Please use your WAGrow license key.",
+      error_code: "LEGACY_CHECK_DISABLED"
+    };
   }
   async activateLicense(_0x58dc10, _0x1a0f01, _0x26efef) {
-    try {
-      const _0x4923ef = this.validateSelfContainedLicense(_0x58dc10);
-      if (_0x4923ef.success) {
-        const _0x3110bf = this.checkSelfContainedLicenseActivation(_0x58dc10, _0x1a0f01);
-        if (_0x3110bf.alreadyActivated) {
-          return {
-            success: false,
-            message: "This license key has already been activated on this machine. Each license can only be activated once per machine.",
-            error_code: "LICENSE_ALREADY_ACTIVATED"
-          };
-        }
-        const _0x54946e = new Date();
-        const _0x3db966 = new Date(_0x4923ef.expires_at);
-        const _0x16393c = Math.ceil((_0x3db966 - _0x54946e) / 86400000);
-        const _0x572c3c = Math.ceil((_0x3db966 - _0x54946e) / 86400000);
-        this.recordSelfContainedLicenseActivation(_0x58dc10, _0x1a0f01, _0x26efef);
-        return {
-          success: true,
-          data: {
-            license_key: _0x58dc10,
-            customer_name: _0x4923ef.customer_name,
-            plan_name: _0x4923ef.plan_type,
-            plan_type: _0x4923ef.plan_type,
-            expires_at: _0x4923ef.expires_at,
-            expires_at_formatted: new Date(_0x4923ef.expires_at).toLocaleDateString(),
-            status: _0x4923ef.status,
-            days_remaining: _0x16393c,
-            validity_days: _0x572c3c,
-            is_trial: false,
-            isTrial: false,
-            isValid: true,
-            modules: _0x4923ef.modules || [],
-            company_info: _0x4923ef.company_info || null
-          }
-        };
-      }
-      if (!this.validateLicenseKeyFormat(_0x58dc10)) {
-        return {
-          success: false,
-          message: "Invalid license key format",
-          error_code: "INVALID_FORMAT"
-        };
-      }
-      const _0x70e7f4 = this.loadKeygenLicenses();
-      const _0x5d159a = _0x70e7f4.findIndex(_0x47922e => _0x47922e.license_key === _0x58dc10);
-      if (_0x5d159a === -1) {
-        return {
-          success: false,
-          message: "Failed to activate license. Please ensure the Keygen app is installed and has the license database. If you are using a license generated on another computer, make sure you are using the correct license key format.",
-          error_code: "LICENSE_NOT_FOUND"
-        };
-      }
-      const _0x17745e = _0x70e7f4[_0x5d159a];
-      const _0x2b6fb7 = new Date();
-      const _0x4a9251 = new Date(_0x17745e.expires_at);
-      if (_0x2b6fb7 > _0x4a9251) {
-        return {
-          success: false,
-          message: "License has expired",
-          error_code: "LICENSE_EXPIRED"
-        };
-      }
-      if (_0x17745e.status !== "active") {
-        return {
-          success: false,
-          message: "License is " + _0x17745e.status,
-          error_code: "LICENSE_INACTIVE"
-        };
-      }
-      const _0x3f3323 = _0x17745e.activations.find(_0xf2adda => _0xf2adda.machine_id === _0x1a0f01);
-      if (!_0x3f3323) {
-        _0x17745e.activations.push({
-          machine_id: _0x1a0f01,
-          activation_code: this.generateActivationCode(_0x58dc10, _0x1a0f01),
-          activated_at: _0x2b6fb7.toISOString(),
-          app_version: _0x26efef
-        });
-        _0x70e7f4[_0x5d159a] = _0x17745e;
-        this.saveKeygenLicenses(_0x70e7f4);
-      }
-      const _0x2663e1 = Math.ceil((_0x4a9251 - _0x2b6fb7) / 86400000);
-      return {
-        success: true,
-        data: {
-          license_key: _0x17745e.license_key,
-          customer_name: _0x17745e.customer_name,
-          plan_name: _0x17745e.plan_type,
-          plan_type: _0x17745e.plan_type,
-          expires_at: _0x17745e.expires_at,
-          expires_at_formatted: _0x17745e.expires_at_formatted,
-          status: _0x17745e.status,
-          days_remaining: _0x2663e1,
-          is_trial: _0x17745e.plan_type === "trial",
-          validity_days: _0x17745e.validity_days,
-          modules: _0x17745e.modules || [],
-          company_info: _0x17745e.company_info || null
-        }
-      };
-    } catch (_0x188a5e) {
-      return {
-        success: false,
-        message: _0x188a5e.message,
-        error_code: "ACTIVATION_ERROR"
-      };
-    }
+    return {
+      success: false,
+      message: "Legacy offline license activation is permanently disabled. Please use a valid WAGrow license key.",
+      error_code: "LEGACY_ACTIVATION_DISABLED"
+    };
   }
   async validateLicense(_0x283428, _0x5b248e, _0x586d56) {
     try {
@@ -428,65 +274,11 @@ class LocalLicenseService {
     }
   }
   validateSelfContainedLicense(_0x83a4a9) {
-    try {
-      const _0x3f841a = (_0x83a4a9 || "").replace(/\s+/g, "");
-      if (_0x3f841a.startsWith("LW2.") && _0x3f841a.split(".").length === 3) {
-        const _0x27f3ff = getPublicKey();
-        if (!_0x27f3ff) {
-          return {
-            success: false,
-            error: "License public key unavailable"
-          };
-        }
-        const [, _0x5cfee3, _0x59c0f8] = _0x3f841a.split(".");
-        const _0x228eda = _0x59c0f8.replace(/-/g, "+").replace(/_/g, "/");
-        const _0x973396 = crypto.createVerify("RSA-SHA256");
-        _0x973396.update(_0x5cfee3);
-        if (!_0x973396.verify(_0x27f3ff, _0x228eda, "base64")) {
-          return {
-            success: false,
-            error: "License signature verification failed"
-          };
-        }
-        const _0x5b550e = _0x5cfee3.length % 4 === 0 ? "" : "=".repeat(4 - _0x5cfee3.length % 4);
-        const _0xf31736 = Buffer.from(_0x5cfee3.replace(/-/g, "+").replace(/_/g, "/") + _0x5b550e, "base64").toString("utf8");
-        const _0x37849b = JSON.parse(_0xf31736);
-        const _0x49f1ed = new Date((_0x37849b.exp || 0) * 1000);
-        if (new Date() > _0x49f1ed) {
-          return {
-            success: false,
-            error: "License expired",
-            status: "expired"
-          };
-        }
-        return {
-          success: true,
-          status: "active",
-          expires_at: _0x49f1ed.toISOString(),
-          customer_name: _0x37849b.name || "Licensed User",
-          plan_type: _0x37849b.plan || "standard",
-          modules: _0x37849b.modules || [],
-          machine_id: _0x37849b.mb || null,
-          company_info: _0x37849b.ci || null
-        };
-      }
-      if (_0x3f841a.startsWith("LW-") && _0x3f841a.split("-").length === 5) {
-        return {
-          success: false,
-          error: "Legacy license format requires online activation",
-          error_code: "LEGACY_REQUIRES_SERVER"
-        };
-      }
-      return {
-        success: false,
-        error: "Unrecognised license key format"
-      };
-    } catch (_0x10befe) {
-      return {
-        success: false,
-        error: "License validation failed: " + _0x10befe.message
-      };
-    }
+    return {
+      success: false,
+      error: "Legacy license system (LW2 / offline) is permanently disabled. Please use a valid WAGrow license key.",
+      error_code: "LEGACY_KEY_DEPRECATED"
+    };
   }
   generateSelfContainedLicense(_0x17c2c0, _0x3282e6) {
     try {

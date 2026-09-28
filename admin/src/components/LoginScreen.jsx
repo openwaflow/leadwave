@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api, auth } from '../services/api';
 
 export default function LoginScreen({ onLoginSuccess }) {
@@ -9,51 +9,11 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [resellerPin, setResellerPin] = useState('');
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
-  const [apiUrl, setApiUrl]           = useState(auth.getApiUrl());
-  const [showUrlSettings, setShowUrlSettings] = useState(false);
-  const [apiStatus, setApiStatus]     = useState({ tested: false, online: false, message: 'Checking...' });
-
-  // Test API connection on mount
-  useEffect(() => {
-    let mounted = true;
-    async function checkApi() {
-      try {
-        const res = await api.ping(apiUrl);
-        if (mounted) {
-          if (res?.success) {
-            setApiStatus({ tested: true, online: true, message: 'Google Sheets Backend Connected' });
-          } else {
-            setApiStatus({ tested: true, online: false, message: 'API error: ' + (res?.error || 'Unknown') });
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          setApiStatus({ tested: true, online: false, message: 'Server unreachable. Check URL.' });
-        }
-      }
-    }
-    checkApi();
-    return () => { mounted = false; };
-  }, [apiUrl]);
-
-  const handleSaveUrl = (e) => {
-    e.preventDefault();
-    auth.setApiUrl(apiUrl);
-    setShowUrlSettings(false);
-    setError('');
-    // re-test
-    api.ping(apiUrl).then(res => {
-      setApiStatus({ tested: true, online: !!res?.success, message: res?.success ? 'Google Sheets Backend Connected' : 'Failed' });
-    }).catch(() => {
-      setApiStatus({ tested: true, online: false, message: 'Connection failed' });
-    });
-  };
 
   const handleAdminLogin = async (e) => {
     e.preventDefault();
     if (!auth.getApiUrl()) {
-      setShowUrlSettings(true);
-      setError('Please configure your Google Apps Script URL first.');
+      setError('Service connection error. Please contact administrator.');
       return;
     }
     setLoading(true);
@@ -63,7 +23,7 @@ export default function LoginScreen({ onLoginSuccess }) {
       if (res?.success) {
         onLoginSuccess('admin');
       } else {
-        setError(res?.error || 'Invalid Admin PIN. (Default is 123456)');
+        setError(res?.error || 'Invalid Admin PIN.');
       }
     } catch (err) {
       setError('Connection error: ' + (err.message || 'Server unreachable'));
@@ -74,8 +34,7 @@ export default function LoginScreen({ onLoginSuccess }) {
   const handleResellerLogin = async (e) => {
     e.preventDefault();
     if (!auth.getApiUrl()) {
-      setShowUrlSettings(true);
-      setError('Please configure your Google Apps Script URL first.');
+      setError('Service connection error. Please contact administrator.');
       return;
     }
     setLoading(true);
@@ -120,14 +79,8 @@ export default function LoginScreen({ onLoginSuccess }) {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-medium">
-            License &amp; Reseller Control Center
+            Enterprise License &amp; Reseller Control Center
           </p>
-
-          {/* Real-time Status Badge */}
-          <div className="inline-flex items-center gap-2 mt-3 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-800 text-[11px] font-semibold text-slate-300 shadow-sm">
-            <span className={`w-2 h-2 rounded-full ${apiStatus.online ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
-            <span>{apiStatus.message}</span>
-          </div>
         </div>
 
         {/* Role Switcher Pill */}
@@ -174,7 +127,6 @@ export default function LoginScreen({ onLoginSuccess }) {
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                     Master Admin PIN
                   </label>
-                  <span className="text-[11px] text-slate-500">Default: <strong className="text-emerald-400 font-mono">123456</strong></span>
                 </div>
                 <div className="relative">
                   <input
@@ -261,48 +213,11 @@ export default function LoginScreen({ onLoginSuccess }) {
               </button>
             </form>
           )}
-
-          {/* Google Script Connection Toggle */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80 text-center">
-            <button
-              type="button"
-              onClick={() => setShowUrlSettings(!showUrlSettings)}
-              className="text-xs text-slate-400 hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5 font-medium"
-            >
-              <span>⚙️</span>
-              <span>{showUrlSettings ? 'Hide Google Script Settings' : 'Configure Google Apps Script URL'}</span>
-            </button>
-
-            {showUrlSettings && (
-              <form onSubmit={handleSaveUrl} className="mt-4 p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-left space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
-                    Google Apps Script Execution URL
-                  </label>
-                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-mono">100% Free DB</span>
-                </div>
-                <input
-                  type="url"
-                  required
-                  value={apiUrl}
-                  onChange={(e) => setApiUrl(e.target.value)}
-                  className="glass-input text-xs font-mono"
-                  placeholder="https://script.google.com/macros/s/.../exec"
-                />
-                <button
-                  type="submit"
-                  className="btn-secondary w-full justify-center py-2 text-xs font-bold"
-                >
-                  Save &amp; Test URL
-                </button>
-              </form>
-            )}
-          </div>
         </div>
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-500 mt-6 font-medium">
-          Zero-Cost Serverless CRM • Powered by Google Sheets &amp; Vercel
+          WAGrow CRM • Enterprise Portal
         </p>
 
       </div>

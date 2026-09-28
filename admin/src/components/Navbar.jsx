@@ -27,7 +27,7 @@ export default function Navbar({ onOpenGenerate, onOpenSettings, onLogout, isOnl
           {/* Status Indicator */}
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300">
             <span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
-            <span>{isOnline ? 'Google Sheets Connected' : 'Connecting...'}</span>
+            <span>{isOnline ? 'System Online' : 'Connecting...'}</span>
           </div>
 
           {/* New License Button */}
@@ -45,7 +45,7 @@ export default function Navbar({ onOpenGenerate, onOpenSettings, onLogout, isOnl
           <button
             onClick={onOpenSettings}
             className="btn-secondary text-sm p-2.5"
-            title="Settings & Google Sheet API URL"
+            title="Settings & Security"
           >
             <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>

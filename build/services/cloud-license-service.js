@@ -61,127 +61,19 @@ class CloudLicenseService {
     }
   }
   async activateCloudLicense(_0x3f01e7, _0x3cee98) {
-    try {
-      const _0x200cca = require("node-fetch");
-      const _0x2df51f = new AbortController();
-      const _0xfb80e3 = setTimeout(() => _0x2df51f.abort(), 10000);
-      let _0x5c5974;
-      try {
-        _0x5c5974 = await _0x200cca(this.apiBaseUrl + "/license/heartbeat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          },
-          body: JSON.stringify({
-            license_key: _0x3f01e7,
-            machine_id: _0x3cee98,
-            app_version: app.getVersion()
-          }),
-          signal: _0x2df51f.signal
-        });
-      } finally {
-        clearTimeout(_0xfb80e3);
-      }
-      const _0x4a844c = await _0x5c5974.json();
-      if (_0x4a844c.success && _0x4a844c.is_valid) {
-        const _0x5ede4b = {
-          license_key: _0x3f01e7,
-          machine_id: _0x3cee98,
-          customer_name: _0x4a844c.data.customer_name,
-          plan: _0x4a844c.data.plan,
-          plan_name: _0x4a844c.data.plan_name || _0x4a844c.data.plan,
-          source: _0x4a844c.data.source,
-          expires_at: _0x4a844c.data.expires_at,
-          modules: _0x4a844c.data.modules || [],
-          features: _0x4a844c.data.features || [],
-          status: _0x4a844c.data.status || "active",
-          company_info: _0x4a844c.data.company_info || null,
-          activated_at: new Date().toISOString(),
-          last_validated_at: new Date().toISOString(),
-          last_validation_success: new Date().toISOString()
-        };
-        this.saveCloudLicenseData(_0x5ede4b);
-        return {
-          success: true,
-          message: "Cloud license activated successfully",
-          data: _0x5ede4b
-        };
-      } else {
-        return {
-          success: false,
-          message: _0x4a844c.message || "License validation failed",
-          code: _0x4a844c.code,
-          status: _0x4a844c.status
-        };
-      }
-    } catch (_0x4e87db) {
-      console.error("Cloud license activation error:", _0x4e87db);
-      return {
-        success: false,
-        message: "Failed to connect to license server",
-        error: _0x4e87db.message
-      };
-    }
+    return {
+      success: false,
+      message: "Legacy cloud license activation is permanently disabled. Please use your WAGrow license key.",
+      error_code: "LEGACY_CLOUD_DISABLED"
+    };
   }
   async validateCloudLicense() {
-    try {
-      const _0x733845 = this.getCloudLicenseData();
-      if (!_0x733845) {
-        return {
-          success: false,
-          message: "No cloud license found",
-          code: "NO_CLOUD_LICENSE"
-        };
-      }
-      const _0x5e34ec = require("node-fetch");
-      const _0x24ba30 = new AbortController();
-      const _0x39a0bd = setTimeout(() => _0x24ba30.abort(), 10000);
-      let _0x2e1bae;
-      try {
-        _0x2e1bae = await _0x5e34ec(this.apiBaseUrl + "/license/heartbeat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          },
-          body: JSON.stringify({
-            license_key: _0x733845.license_key,
-            machine_id: _0x733845.machine_id,
-            app_version: app.getVersion()
-          }),
-          signal: _0x24ba30.signal
-        });
-      } finally {
-        clearTimeout(_0x39a0bd);
-      }
-      const _0x38a5a8 = await _0x2e1bae.json();
-      _0x733845.last_validated_at = new Date().toISOString();
-      if (_0x38a5a8.success && _0x38a5a8.is_valid) {
-        _0x733845.last_validation_success = new Date().toISOString();
-        this.saveCloudLicenseData(_0x733845);
-        return {
-          success: true,
-          is_valid: true,
-          status: "active",
-          message: "License is active and valid",
-          data: _0x38a5a8.data
-        };
-      } else {
-        this.saveCloudLicenseData(_0x733845);
-        return {
-          success: false,
-          is_valid: false,
-          status: _0x38a5a8.status,
-          message: _0x38a5a8.message,
-          code: _0x38a5a8.code,
-          suspension_reason: _0x38a5a8.suspension_reason
-        };
-      }
-    } catch (_0x2d2f48) {
-      console.error("Cloud license validation error:", _0x2d2f48);
-      return this.handleNetworkError();
-    }
+    return {
+      success: false,
+      is_valid: false,
+      message: "Legacy cloud license system is permanently disabled.",
+      code: "LEGACY_CLOUD_DISABLED"
+    };
   }
   handleNetworkError() {
     const _0x3094c2 = this.getCloudLicenseData();

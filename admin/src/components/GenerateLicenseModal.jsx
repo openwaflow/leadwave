@@ -117,7 +117,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
 
             <div>
               <h4 className="font-bold text-xl text-white">License Generated!</h4>
-              <p className="text-sm text-slate-400 mt-1">Saved directly to Google Sheets database</p>
+              <p className="text-sm text-slate-400 mt-1">Saved securely to cloud database</p>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-left space-y-2">

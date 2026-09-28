@@ -22,7 +22,7 @@ export default function SettingsModal({ isOpen, onClose, onSettingsUpdated }) {
     try {
       const res = await api.pingServer(apiUrl);
       if (res && res.success) {
-        setTestResult({ success: true, message: 'Connected successfully to Google Sheet!' });
+        setTestResult({ success: true, message: 'Connected successfully to Cloud Server!' });
       } else {
         setTestResult({ success: false, message: 'Response received but test failed.' });
       }
@@ -52,9 +52,8 @@ export default function SettingsModal({ isOpen, onClose, onSettingsUpdated }) {
     }
   };
 
-  const clientIntegrationCode = `// In WAGrow Desktop App (env or config):
-// Set your Google Apps Script Web App URL:
-NEWLIC_API_URL="${apiUrl || 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'}"`;
+  const clientIntegrationCode = `// In WAGrow Desktop App (reseller-config.json or env):
+GAS_API_URL="${apiUrl || ''}"`;
 
   const handleCopySnippet = () => {
     navigator.clipboard.writeText(clientIntegrationCode);
@@ -77,7 +76,7 @@ NEWLIC_API_URL="${apiUrl || 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/e
             </div>
             <div>
               <h3 className="font-bold text-lg text-white">System Settings</h3>
-              <p className="text-xs text-slate-400">Google Sheets API & Security</p>
+              <p className="text-xs text-slate-400">System API & Security</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
@@ -87,16 +86,16 @@ NEWLIC_API_URL="${apiUrl || 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/e
 
         <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           
-          {/* Section 1: Google Apps Script Web App URL */}
+          {/* Section 1: Backend Execution URL */}
           <div className="space-y-3">
             <h4 className="font-semibold text-sm text-white flex items-center gap-2">
-              <span>Google Apps Script Web App URL</span>
+              <span>Cloud Backend API Execution URL</span>
               <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
-                100% Free Database
+                Cloud Server
               </span>
             </h4>
             <p className="text-xs text-slate-400">
-              Deploy your Google Apps Script as a Web App (Access: "Anyone") and paste the execution URL below:
+              Enter your backend execution URL below:
             </p>
             <div className="flex gap-2">
               <input

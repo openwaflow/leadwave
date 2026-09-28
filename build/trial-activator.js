@@ -347,7 +347,7 @@
 
       <!-- Bottom helper -->
       <div class="wg-footnote">
-        Admin Portal Support: <a href="https://adwagrow.vercel.app/" target="_blank">adwagrow.vercel.app</a>
+        🔒 Official License Verification &amp; Security System
       </div>
     `;
 

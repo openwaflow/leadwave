@@ -139,7 +139,7 @@ export default function LicenseTable({
                 <td colSpan={compact ? 7 : 8} className="py-12 text-center text-slate-400">
                   <div className="flex items-center justify-center gap-3">
                     <span className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></span>
-                    <span>Loading licenses from Google Sheets...</span>
+                    <span>Loading licenses...</span>
                   </div>
                 </td>
               </tr>

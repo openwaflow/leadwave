@@ -22,8 +22,8 @@ class NewLicLicenseService {
   }
   detectKeyFormat(_0xdf7e27) {
     const _0x365ed8 = (_0xdf7e27 || "").replace(/\s+/g, "");
-    if (_0x365ed8.startsWith("LW2.") && _0x365ed8.split(".").length === 3) {
-      return "v2";
+    if (_0x365ed8.startsWith("LW2.")) {
+      return "legacy_blocked";
     }
     if (_0x365ed8.startsWith("LW-")) {
       return "gas";
@@ -35,79 +35,13 @@ class NewLicLicenseService {
     return Buffer.from(_0x2bcbc9.replace(/-/g, "+").replace(/_/g, "/") + _0x3908a1, "base64");
   }
   _validateLicenseKeyV2(_0x49f873) {
-    try {
-      _0x49f873 = (_0x49f873 || "").replace(/\s+/g, "");
-      const _0x22c11d = _0x49f873.split(".");
-      if (_0x22c11d.length !== 3 || _0x22c11d[0] !== "LW2") {
-        return {
-          valid: false,
-          error: "Invalid V2 license key format"
-        };
-      }
-      const [, _0x5d32ae, _0x384dda] = _0x22c11d;
-      const _0x4dc3ce = _0x384dda.replace(/-/g, "+").replace(/_/g, "/");
-      const _0x4a8d65 = crypto.createVerify("RSA-SHA256");
-      _0x4a8d65.update(_0x5d32ae);
-      const _0x580ce3 = _0x4a8d65.verify(LICENSE_PUBLIC_KEY, _0x4dc3ce, "base64");
-      if (!_0x580ce3) {
-        return {
-          valid: false,
-          error: "License signature verification failed"
-        };
-      }
-      const _0x12d554 = this._b64urlDecode(_0x5d32ae).toString("utf8");
-      const _0x31082a = JSON.parse(_0x12d554);
-      const _0x47fa5e = (_0x31082a.exp || 0) * 1000;
-      if (Date.now() > _0x47fa5e) {
-        return {
-          valid: false,
-          error: "License has expired",
-          data: _0x31082a,
-          expires_at: new Date(_0x47fa5e)
-        };
-      }
-      const _0x288758 = {
-        name: _0x31082a.name,
-        mobile: _0x31082a.mobile,
-        plan: _0x31082a.plan,
-        max_devices: _0x31082a.max_devices,
-        max_tg_accounts: _0x31082a.max_tg_accounts,
-        modules: _0x31082a.modules || [],
-        issued: _0x31082a.issued,
-        company_info: _0x31082a.ci || null,
-        machine_id: _0x31082a.mb || null,
-        license_id: _0x31082a.lid || null
-      };
-      return {
-        valid: true,
-        data: _0x288758,
-        expires_at: new Date(_0x47fa5e)
-      };
-    } catch (_0x142764) {
-      return {
-        valid: false,
-        error: "V2 validation error: " + _0x142764.message
-      };
-    }
+    return {
+      valid: false,
+      error: "Legacy LW2 license format is deprecated and permanently disabled.",
+      error_code: "LEGACY_KEY_DEPRECATED"
+    };
   }
   async _migrateLegacyKey(_0x422677, _0x1e57f8) {
-    try {
-      const _0x4b4b84 = await axios.post(this.apiUrl + "/licenses/migrate-key", {
-        old_key: _0x422677,
-        machine_id: _0x1e57f8
-      }, {
-        timeout: 8000
-      });
-      if (_0x4b4b84.data && _0x4b4b84.data.success && _0x4b4b84.data.new_key) {
-        const _0x3660de = _0x4b4b84.data.new_key;
-        const _0x237f5d = this._validateLicenseKeyV2(_0x3660de);
-        if (_0x237f5d.valid) {
-          return _0x3660de;
-        }
-      }
-    } catch (_0x487d19) {
-      console.error("Legacy key migration failed:", _0x487d19.message);
-    }
     return null;
   }
   _deriveEncryptionKey() {
@@ -302,120 +236,87 @@ class NewLicLicenseService {
     }
   }
   async validateLicenseWithAPI(_0x25ceba, _0x17e898) {
-    const _0x364e5e = 2;
-    const _0x5845bf = 8000;
-    const _0x3db272 = this.detectKeyFormat(_0x25ceba);
-    if (_0x3db272 === "v1") {
-      const _0x3d3920 = await this._migrateLegacyKey(_0x25ceba, _0x17e898);
-      if (_0x3d3920) {
-        try {
-          const _0x240d1b = this.get("license") || {};
-          this.set("license", {
-            ..._0x240d1b,
-            key: _0x3d3920
-          });
-          if (global.logToFile) {
-            global.logToFile("🔐 Legacy license key auto-upgraded to v2 (RSA-signed)");
-          }
-          _0x25ceba = _0x3d3920;
-        } catch (_0x4ebf16) {}
-      }
+    _0x25ceba = String(_0x25ceba || "").trim();
+
+    // 1. Explicitly reject any old LW2 format
+    if (_0x25ceba.startsWith("LW2.")) {
+      return {
+        valid: false,
+        error: "Legacy LW2 license format is deprecated and permanently disabled.",
+        error_code: "LEGACY_KEY_DEPRECATED"
+      };
     }
 
-    if (_0x25ceba.startsWith("LW-")) {
-      try {
-        const gasUrl = "https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec";
-        const m = String(_0x17e898 || "").trim().toUpperCase();
-        const userCode = m.startsWith("USER-") ? m : (m.length >= 16 ? ("USER-" + m.slice(0, 8) + "-" + m.slice(8, 16)) : ("USER-" + m));
-        const gasRes = await axios.post(gasUrl, JSON.stringify({
-          action: "validateLicense",
-          key: _0x25ceba,
-          machine_id: userCode
-        }), {
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          maxRedirects: 5,
-          timeout: 25000
-        });
-        if (gasRes.data && gasRes.data.valid && gasRes.data.data) {
-          const d = gasRes.data.data;
-          const allModules = [
-            "proxies", "single-message", "templates", "contacts", "bulk-messages",
-            "warmer", "opt-out-management", "auto-reply", "chatbot", "support-bot",
-            "ai-chatbot", "call-responder", "follow-up", "recall-bot", "group-grabber",
-            "manage-group", "reports", "devices", "REST API", "incoming-messages",
-            "live-chat", "tg-dashboard", "tg-accounts", "tg-live-chat", "tg-broadcast",
-            "tg-groups", "tg-auto-responder", "tg-ai-agent"
-          ];
-          const formatted = {
-            valid: true,
-            data: {
-              name: d.customer_name || "Valued Client",
-              mobile: d.mobile || "",
-              plan: (d.plan_type || "pro").toLowerCase(),
-              max_devices: d.max_devices || 1,
-              max_tg_accounts: 100,
-              modules: allModules,
-              issued: Date.now() / 1000,
-              company_info: null,
-              machine_id: _0x17e898,
-              license_id: d.license_key
-            },
-            expires_at: new Date(d.expires_at)
-          };
-          this._cacheValidationResult(_0x25ceba, formatted);
-          return formatted;
-        } else if (gasRes.data && !gasRes.data.valid && gasRes.data.error_code) {
-          return {
-            valid: false,
-            error: gasRes.data.error || "License not valid",
-            error_code: gasRes.data.error_code
-          };
-        }
-      } catch (gasErr) {
-        console.error("⚠️ GAS validation error in NewLicService:", gasErr.message);
-        const cached = this._getCachedValidationResult(_0x25ceba);
-        if (cached) return cached;
-      }
+    // 2. Reject anything that is not LW- format
+    if (!_0x25ceba.startsWith("LW-")) {
+      return {
+        valid: false,
+        error: "Invalid license format. License keys must begin with LW-.",
+        error_code: "INVALID_FORMAT"
+      };
     }
-    for (let _0x2a9e66 = 1; _0x2a9e66 <= _0x364e5e; _0x2a9e66++) {
-      try {
-        const _0x3bb22e = await axios.post(this.apiUrl + "/validate-license", {
-          licenseKey: _0x25ceba,
-          machineId: _0x17e898
-        }, {
-          timeout: _0x5845bf
-        });
-        if (_0x3bb22e.data.valid) {
-          this._cacheValidationResult(_0x25ceba, _0x3bb22e.data);
-        }
-        return _0x3bb22e.data;
-      } catch (_0x593724) {
-        const _0x21fae6 = _0x593724.code === "ECONNABORTED" || _0x593724.message && _0x593724.message.includes("timeout");
-        const _0x3e8d25 = _0x21fae6 || ["ENOTFOUND", "ECONNREFUSED", "EAI_AGAIN", "ECONNRESET", "ENETUNREACH"].includes(_0x593724.code);
-        if (_0x2a9e66 < _0x364e5e && _0x3e8d25) {
-          continue;
-        }
-        console.error("⚠️ API validation error:", _0x593724.message);
-        const _0x59741d = this._getCachedValidationResult(_0x25ceba);
-        if (_0x59741d) {
-          return _0x59741d;
-        }
-        const _0x51ad05 = this.validateLicenseKey(_0x25ceba);
-        if (_0x51ad05.valid && _0x51ad05.format === "v2") {
-          return {
-            valid: true,
-            data: _0x51ad05.data,
-            expires_at: _0x51ad05.expires_at,
-            offline: true,
-            message: "Validated offline — server unreachable"
-          };
-        }
+
+    // 3. Exclusively validate against Google Apps Script database
+    try {
+      const gasUrl = "https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec";
+      const m = String(_0x17e898 || "").trim().toUpperCase();
+      const userCode = m.startsWith("USER-") ? m : (m.length >= 16 ? ("USER-" + m.slice(0, 8) + "-" + m.slice(8, 16)) : ("USER-" + m));
+      const gasRes = await axios.post(gasUrl, JSON.stringify({
+        action: "validateLicense",
+        key: _0x25ceba,
+        machine_id: userCode
+      }), {
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        maxRedirects: 5,
+        timeout: 25000
+      });
+
+      if (gasRes.data && gasRes.data.valid && gasRes.data.data) {
+        const d = gasRes.data.data;
+        const allModules = [
+          "proxies", "single-message", "templates", "contacts", "bulk-messages",
+          "warmer", "opt-out-management", "auto-reply", "chatbot", "support-bot",
+          "ai-chatbot", "call-responder", "follow-up", "recall-bot", "group-grabber",
+          "manage-group", "reports", "devices", "REST API", "incoming-messages",
+          "live-chat", "tg-dashboard", "tg-accounts", "tg-live-chat", "tg-broadcast",
+          "tg-groups", "tg-auto-responder", "tg-ai-agent"
+        ];
+        const formatted = {
+          valid: true,
+          data: {
+            name: d.customer_name || "Valued Client",
+            mobile: d.mobile || "",
+            plan: (d.plan_type || "pro").toLowerCase(),
+            max_devices: d.max_devices || 1,
+            max_tg_accounts: 100,
+            modules: allModules,
+            issued: Date.now() / 1000,
+            company_info: null,
+            machine_id: _0x17e898,
+            license_id: d.license_key
+          },
+          expires_at: new Date(d.expires_at)
+        };
+        this._cacheValidationResult(_0x25ceba, formatted);
+        return formatted;
+      } else if (gasRes.data && !gasRes.data.valid && gasRes.data.error_code) {
         return {
           valid: false,
-          error: _0x51ad05.format === "v1" ? "Connect to the internet once to activate your license. (Legacy key requires server upgrade.)" : _0x51ad05.error || "License server unavailable. Please check your internet connection."
+          error: gasRes.data.error || "License not valid",
+          error_code: gasRes.data.error_code
         };
       }
+    } catch (gasErr) {
+      console.error("⚠️ GAS validation error in NewLicService:", gasErr.message);
+      const cached = this._getCachedValidationResult(_0x25ceba);
+      if (cached) return cached;
     }
+
+    return {
+      valid: false,
+      error: "License validation failed. Key is not registered in Google Sheets database.",
+      error_code: "LICENSE_NOT_FOUND"
+    };
   }
   _cacheValidationResult(_0x206d0c, _0x4a1637) {
     try {

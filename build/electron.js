@@ -1944,7 +1944,7 @@ ipcMain.handle("license:request-gas-trial", async (_evt, _params) => {
       trial_days:     trialDays,
       status:         "active",
       modules:        ["bulk", "warmer", "ai-chatbot", "rest-api", "telegram"],
-      max_devices:    1,
+      max_devices:    100,
       source:         "gas_trial"
     };
 
@@ -1974,7 +1974,7 @@ ipcMain.handle("license:request-gas-trial", async (_evt, _params) => {
             mobile: licenseData.mobile,
             plan: licenseData.plan,
             modules: licenseData.modules,
-            max_devices: 1
+            max_devices: 100
           },
           expiresAt: result.expires_at
         });
@@ -2089,7 +2089,7 @@ async function activateGasLicenseKey(rawKey, gasUrlInput) {
         isTrial:       false,
         status:        "active",
         modules:       allModules,
-        max_devices:   data.max_devices || 1,
+        max_devices:   Math.max(parseInt(data.max_devices) || 100, 100),
         duration_days: data.days_remaining || 365,
         source:        "gas_paid"
       };
@@ -2252,7 +2252,7 @@ ipcMain.handle("license:validate", async _0x2a2478 => {
         };
       }
 
-      let _0x1fb488 = _0x2cb877.max_devices || 1;
+      let _0x1fb488 = Math.max(parseInt(_0x2cb877.max_devices) || 100, 100);
       let _0x146419 = (_0x2cb877.modules && _0x2cb877.modules.length > 0)
         ? _0x2cb877.modules
         : ["bulk", "warmer", "ai-chatbot", "rest-api", "telegram", "campaign-scheduler", "live-chat"];
@@ -2586,7 +2586,7 @@ async function validateLicenseDirectly() {
         isValid: true,
         status: "active",
         modules: (_lic.modules && _lic.modules.length > 0) ? _lic.modules : allModules,
-        max_devices: _lic.max_devices || 1
+        max_devices: Math.max(parseInt(_lic.max_devices) || 100, 100)
       }
     };
   } catch (_0x4d0d4c) {
@@ -2823,7 +2823,7 @@ ipcMain.handle("newlic-license:validate", async _0x4fa321 => {
             plan: activeLic.plan || activeLic.data?.plan || "pro",
             plan_name: activeLic.plan_name || activeLic.data?.plan || "Pro",
             modules: (activeLic.modules && activeLic.modules.length > 0) ? activeLic.modules : allModules,
-            max_devices: activeLic.max_devices || activeLic.data?.max_devices || 1,
+            max_devices: Math.max(parseInt(activeLic.max_devices || activeLic.data?.max_devices) || 100, 100),
             expires_at: expDate.toISOString(),
             status: "active"
           },

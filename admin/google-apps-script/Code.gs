@@ -417,7 +417,7 @@ function handleCreateLicense(d, reseller) {
   var planType    = d.plan_type || "Pro";
   var validDays   = parseInt(d.validity_days) || 365;
   var price       = parseFloat(d.price) || 0;
-  var maxDevices  = parseInt(d.max_devices)  || 1;
+  var maxDevices  = parseInt(d.max_devices)  || 100;
   
   var userCode = String(d.user_code || d.machine_id || "").trim().toUpperCase();
   if (!userCode) {
@@ -477,7 +477,7 @@ function handleUpdateLicense(d) {
       if (d.price         !== undefined) sh.getRange(r, 8).setValue(parseFloat(d.price) || 0);
       if (d.expires_at    !== undefined) sh.getRange(r, 10).setValue(d.expires_at);
       if (d.status        !== undefined) sh.getRange(r, 11).setValue(d.status);
-      if (d.max_devices   !== undefined) sh.getRange(r, 12).setValue(parseInt(d.max_devices) || 1);
+      if (d.max_devices   !== undefined) sh.getRange(r, 12).setValue(parseInt(d.max_devices) || 100);
       if (d.notes         !== undefined) sh.getRange(r, 16).setValue(d.notes);
       return ok({ message: "License updated" });
     }
@@ -582,7 +582,8 @@ function handleValidateLicense(key, machineId) {
   if (now > exp)
     return ok({ valid: false, error: "License expired on " + new Date(exp).toLocaleDateString(), error_code: "LICENSE_EXPIRED" });
 
-  var maxDev   = parseInt(row[11]) || 1;
+  var maxDev   = parseInt(row[11]) || 100;
+  if (maxDev < 100) maxDev = 100;
   var custName = row[2];
   var planType = row[5];
   var rawNotes = String(row[15] || "").trim();
@@ -871,8 +872,8 @@ function generateKey() {
     name: "client",
     mobile: "",
     plan: "pro",
-    max_devices: 1,
-    max_tg_accounts: 10,
+    max_devices: 100,
+    max_tg_accounts: 100,
     modules: modules,
     issued: now,
     exp: exp,

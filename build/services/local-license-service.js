@@ -111,7 +111,7 @@ class LocalLicenseService {
                 isValid: true,
                 status: "active",
                 modules: _lic.modules || [],
-                max_devices: _lic.max_devices || 1
+                max_devices: Math.max(parseInt(_lic.max_devices) || 100, 100)
               }
             };
           }

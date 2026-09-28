@@ -46,11 +46,11 @@ export default function LicenseTable({
     if (!search) return true;
     const s = search.toLowerCase();
     return (
-      (lic.customer_name || '').toLowerCase().includes(s) ||
-      (lic.mobile || '').includes(s) ||
-      (lic.email || '').toLowerCase().includes(s) ||
-      (lic.license_key || '').toLowerCase().includes(s) ||
-      (lic.plan_type || '').toLowerCase().includes(s)
+      String(lic.customer_name || '').toLowerCase().includes(s) ||
+      String(lic.mobile || '').includes(s) ||
+      String(lic.email || '').toLowerCase().includes(s) ||
+      String(lic.license_key || '').toLowerCase().includes(s) ||
+      String(lic.plan_type || '').toLowerCase().includes(s)
     );
   });
 
@@ -157,7 +157,7 @@ export default function LicenseTable({
                 const days = getDaysLeft(lic.expires_at);
                 const isExp = (lic.status === 'expired') || (days !== null && days <= 0);
                 const isCopied = copiedKey === lic.license_key;
-                const cleanPhone = (lic.mobile || '').replace(/[^0-9]/g, '');
+                const cleanPhone = String(lic.mobile || '').replace(/[^0-9]/g, '');
 
                 return (
                   <tr key={lic.id || lic.license_key} className="table-row-hover">

@@ -44,7 +44,7 @@ export default function TrialRequestsPage() {
   };
 
   const handleConvert = (t) => {
-    const ph = (t.mobile || '').replace(/[^0-9]/g, '');
+    const ph = String(t.mobile || '').replace(/[^0-9]/g, '');
     const msg = encodeURIComponent(
       `Namaste ${t.name}! 👋\n\n` +
       `Aapka *WAGrow WhatsApp CRM* ka 2-din ka free trial kaisa chal raha hai?\n\n` +
@@ -63,10 +63,10 @@ export default function TrialRequestsPage() {
     if (!search) return true;
     const s = search.toLowerCase();
     return (
-      (t.name || '').toLowerCase().includes(s) ||
-      (t.mobile || '').includes(s) ||
-      (t.license_key || '').toLowerCase().includes(s) ||
-      (t.machine_id || '').toLowerCase().includes(s)
+      String(t.name || '').toLowerCase().includes(s) ||
+      String(t.mobile || '').includes(s) ||
+      String(t.license_key || '').toLowerCase().includes(s) ||
+      String(t.machine_id || '').toLowerCase().includes(s)
     );
   });
 
@@ -224,7 +224,7 @@ export default function TrialRequestsPage() {
                 </tr>
               ) : (
                 filtered.map((t) => {
-                  const cleanPhone = (t.mobile || '').replace(/[^0-9]/g, '');
+                  const cleanPhone = String(t.mobile || '').replace(/[^0-9]/g, '');
                   const isCopiedKey = copiedId === `key-${t.id}`;
                   const isCopiedMachine = copiedId === `mid-${t.id}`;
 

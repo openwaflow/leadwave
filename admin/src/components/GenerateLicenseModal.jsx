@@ -43,7 +43,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
 
   const getWhatsAppShareUrl = () => {
     if (!createdResult) return '#';
-    const cleanPhone = (formData.mobile || '').replace(/[^0-9]/g, '');
+    const cleanPhone = String(formData.mobile || '').replace(/[^0-9]/g, '');
     const msg = encodeURIComponent(
       `🎉 Hello ${formData.customer_name},\n\n` +
       `Your WAGrow WhatsApp CRM License is ready!\n\n` +

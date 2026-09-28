@@ -71,7 +71,7 @@ export default function App() {
         ? await api.listLicenses(search, status)
         : await api.listMyLicenses(search, status);
       if (res?.success) {
-        setLicenses(res.licenses || []);
+        setLicenses(Array.isArray(res.licenses) ? res.licenses : []);
         setIsOnline(true);
       }
     } catch (e) {

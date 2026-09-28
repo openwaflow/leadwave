@@ -19,11 +19,17 @@ export default function EditLicenseModal({ isOpen, onClose, license, onSave }) {
       setFormData({
         id: license.id,
         license_key: license.license_key,
-        customer_name: license.customer_name || '',
-        mobile: license.mobile || '',
-        email: license.email || '',
+        customer_name: license.customer_name ? String(license.customer_name) : '',
+        mobile: license.mobile ? String(license.mobile) : '',
+        email: license.email ? String(license.email) : '',
         plan_type: license.plan_type || 'Pro',
-        expires_at: license.expires_at ? new Date(license.expires_at).toISOString().split('T')[0] : '',
+        expires_at: (() => {
+          if (!license.expires_at) return '';
+          try {
+            const d = new Date(license.expires_at);
+            return !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : '';
+          } catch (_) { return ''; }
+        })(),
         status: license.status || 'active',
         max_devices: license.max_devices || 1,
         notes: license.notes || ''

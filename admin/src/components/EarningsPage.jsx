@@ -43,10 +43,10 @@ export default function EarningsPage({ isReseller }) {
     if (!search) return true;
     const s = search.toLowerCase();
     return (
-      (e.customer_name || '').toLowerCase().includes(s) ||
-      (e.reseller_name || '').toLowerCase().includes(s) ||
-      (e.license_key || '').toLowerCase().includes(s) ||
-      (e.plan_type || '').toLowerCase().includes(s)
+      String(e.customer_name || '').toLowerCase().includes(s) ||
+      String(e.reseller_name || '').toLowerCase().includes(s) ||
+      String(e.license_key || '').toLowerCase().includes(s) ||
+      String(e.plan_type || '').toLowerCase().includes(s)
     );
   });
 

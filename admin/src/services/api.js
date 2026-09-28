@@ -14,24 +14,68 @@ const STORAGE = {
 const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbz1XvaCZjCbonh1bqeNycOGFwFD7rApZUMuZb3XMOsIfJtoHlVFUqJILdfOVcRlEpk/exec';
 
 export const auth = {
-  getApiUrl:  () => localStorage.getItem(STORAGE.API_URL) || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GAS_API_URL) || DEFAULT_GAS_URL,
-  setApiUrl:  (u) => localStorage.setItem(STORAGE.API_URL, (u || '').trim()),
-  getRole:    () => sessionStorage.getItem(STORAGE.ROLE)  || localStorage.getItem(STORAGE.ROLE) || null,
-  setRole:    (r) => { sessionStorage.setItem(STORAGE.ROLE, r); localStorage.setItem(STORAGE.ROLE, r); },
-  getAdminPin:() => sessionStorage.getItem(STORAGE.ADMIN_PIN) || localStorage.getItem(STORAGE.ADMIN_PIN) || '',
-  setAdminPin:(p) => { sessionStorage.setItem(STORAGE.ADMIN_PIN, p); localStorage.setItem(STORAGE.ADMIN_PIN, p); },
-  getResellerId:  () => localStorage.getItem(STORAGE.RESELLER_ID)  || '',
-  getResellerPin: () => sessionStorage.getItem(STORAGE.RESELLER_PIN) || localStorage.getItem(STORAGE.RESELLER_PIN) || '',
-  setResellerAuth:(id, pin) => {
-    localStorage.setItem(STORAGE.RESELLER_ID,  id);
-    localStorage.setItem(STORAGE.RESELLER_PIN, pin);
-    sessionStorage.setItem(STORAGE.RESELLER_PIN, pin);
+  getApiUrl: () => {
+    try {
+      const saved = localStorage.getItem(STORAGE.API_URL);
+      if (saved && saved !== 'undefined' && saved !== 'null' && saved.trim() !== '') {
+        return saved.trim();
+      }
+    } catch (_) {}
+    return (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GAS_API_URL) || DEFAULT_GAS_URL;
+  },
+  setApiUrl: (u) => {
+    try {
+      localStorage.setItem(STORAGE.API_URL, (u || '').trim());
+    } catch (_) {}
+  },
+  getRole: () => {
+    try {
+      const r = sessionStorage.getItem(STORAGE.ROLE) || localStorage.getItem(STORAGE.ROLE) || null;
+      if (r === 'admin' || r === 'reseller') return r;
+    } catch (_) {}
+    return null;
+  },
+  setRole: (r) => {
+    try {
+      sessionStorage.setItem(STORAGE.ROLE, r);
+      localStorage.setItem(STORAGE.ROLE, r);
+    } catch (_) {}
+  },
+  getAdminPin: () => {
+    try {
+      return sessionStorage.getItem(STORAGE.ADMIN_PIN) || localStorage.getItem(STORAGE.ADMIN_PIN) || '';
+    } catch (_) { return ''; }
+  },
+  setAdminPin: (p) => {
+    try {
+      sessionStorage.setItem(STORAGE.ADMIN_PIN, p);
+      localStorage.setItem(STORAGE.ADMIN_PIN, p);
+    } catch (_) {}
+  },
+  getResellerId: () => {
+    try {
+      return localStorage.getItem(STORAGE.RESELLER_ID) || '';
+    } catch (_) { return ''; }
+  },
+  getResellerPin: () => {
+    try {
+      return sessionStorage.getItem(STORAGE.RESELLER_PIN) || localStorage.getItem(STORAGE.RESELLER_PIN) || '';
+    } catch (_) { return ''; }
+  },
+  setResellerAuth: (id, pin) => {
+    try {
+      localStorage.setItem(STORAGE.RESELLER_ID, id);
+      localStorage.setItem(STORAGE.RESELLER_PIN, pin);
+      sessionStorage.setItem(STORAGE.RESELLER_PIN, pin);
+    } catch (_) {}
   },
   isAuthenticated: () => !!auth.getRole(),
   clearAuth: () => {
     [STORAGE.ADMIN_PIN, STORAGE.RESELLER_PIN, STORAGE.ROLE].forEach(k => {
-      sessionStorage.removeItem(k);
-      localStorage.removeItem(k);
+      try {
+        sessionStorage.removeItem(k);
+        localStorage.removeItem(k);
+      } catch (_) {}
     });
   },
   getAuthPayload: () => {
@@ -48,19 +92,31 @@ async function call(action, data = {}, method = 'POST') {
   
   const payload = { ...auth.getAuthPayload(), ...data, action };
 
-  if (method === 'GET') {
-    const qs  = new URLSearchParams(payload).toString();
-    const url = `${apiUrl}${apiUrl.includes('?') ? '&' : '?'}${qs}`;
-    const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
-    return res.json();
-  }
+  try {
+    let res;
+    if (method === 'GET') {
+      const qs  = new URLSearchParams(payload).toString();
+      const url = `${apiUrl}${apiUrl.includes('?') ? '&' : '?'}${qs}`;
+      res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    } else {
+      res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+    }
 
-  const res = await fetch(apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  });
-  return res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (parseErr) {
+      console.warn('API returned non-JSON response:', text.slice(0, 200));
+      return { success: false, error: 'Server returned non-JSON response. Please verify Google Apps Script deployment.' };
+    }
+  } catch (netErr) {
+    console.error('API call error:', netErr);
+    return { success: false, error: netErr.message || 'Network request failed' };
+  }
 }
 
 export const apiConfig = auth;
@@ -68,12 +124,24 @@ export const apiConfig = auth;
 // ── Public
 export const api = {
   ping: async (url) => {
-    const target = `${url || auth.getApiUrl()}${(url || auth.getApiUrl()).includes('?') ? '&' : '?'}action=ping`;
-    return (await fetch(target, { method: 'GET' })).json();
+    try {
+      const target = `${url || auth.getApiUrl()}${(url || auth.getApiUrl()).includes('?') ? '&' : '?'}action=ping`;
+      const res = await fetch(target, { method: 'GET' });
+      const text = await res.text();
+      return JSON.parse(text);
+    } catch (e) {
+      return { success: false, error: e.message || 'Connection failed' };
+    }
   },
   pingServer: async (url) => {
-    const target = `${url || auth.getApiUrl()}${(url || auth.getApiUrl()).includes('?') ? '&' : '?'}action=ping`;
-    return (await fetch(target, { method: 'GET' })).json();
+    try {
+      const target = `${url || auth.getApiUrl()}${(url || auth.getApiUrl()).includes('?') ? '&' : '?'}action=ping`;
+      const res = await fetch(target, { method: 'GET' });
+      const text = await res.text();
+      return JSON.parse(text);
+    } catch (e) {
+      return { success: false, error: e.message || 'Connection failed' };
+    }
   },
 
   // ── Auth

@@ -92,7 +92,7 @@ export default function ResellersPage() {
   };
 
   const handleShareCredentials = (r) => {
-    const ph = (r.mobile || '').replace(/[^0-9]/g, '');
+    const ph = String(r.mobile || '').replace(/[^0-9]/g, '');
     const currentUrl = window.location.origin;
     const msg = encodeURIComponent(
       `Namaste ${r.name}! 👋\n\n` +
@@ -198,7 +198,7 @@ export default function ResellersPage() {
                 </tr>
               ) : (
                 resellers.map((r) => {
-                  const cleanPhone = (r.mobile || '').replace(/[^0-9]/g, '');
+                  const cleanPhone = String(r.mobile || '').replace(/[^0-9]/g, '');
                   const balance = parseFloat(r.balance) || 0;
 
                   return (

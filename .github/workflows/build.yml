@@ -41,8 +41,6 @@ jobs:
 
       - name: Build Linux
         run: npm run build:linux
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -91,8 +89,6 @@ jobs:
       - name: Build Windows
         shell: powershell
         run: npm run build:win
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -126,7 +122,6 @@ jobs:
       - name: Build macOS
         run: npm run build:mac
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload macOS artifacts

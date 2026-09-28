@@ -34,14 +34,10 @@ jobs:
             libnss3-dev libgtk-3-dev libxss1 libasound2-dev
 
       - name: Install npm dependencies
-        run: npm ci
-        env:
-          npm_config_python: python3
+        run: npm install --legacy-peer-deps
 
       - name: Rebuild native modules for Electron
         run: npx @electron/rebuild --force
-        env:
-          npm_config_python: python3
 
       - name: Build Linux
         run: npm run build:linux
@@ -65,46 +61,27 @@ jobs:
     name: Build windows-latest (Windows)
     runs-on: windows-latest
     steps:
-      - name: Checkout (with symlink support)
-        uses: actions/checkout@v4
-        with:
-          # Enable symlinks on Windows checkout
-          fetch-depth: 0
-
-      - name: Enable Windows symlinks
-        shell: powershell
-        run: |
-          # Enable developer mode for symlinks
-          $regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
-          if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
-          Set-ItemProperty -Path $regPath -Name "AllowDevelopmentWithoutDevLicense" -Value 1 -Force
-          Write-Host "Symlink support enabled"
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Setup MSVC Build Environment (for better-sqlite3 / node-gyp)
+      - name: Setup MSVC (for better-sqlite3 / node-gyp)
         uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Configure node-gyp
-        shell: powershell
-        run: |
-          npm config set msvs_version 2022
-          npm config set python python3
 
       - name: Install npm dependencies
         shell: powershell
-        run: npm ci
+        run: npm install --legacy-peer-deps
         env:
-          npm_config_msvs_version: '2022'
+          npm_config_msvs_version: 2022
 
       - name: Rebuild native modules for Electron
         shell: powershell
         run: npx @electron/rebuild --force
         env:
-          npm_config_msvs_version: '2022'
+          npm_config_msvs_version: 2022
 
       - name: Build Windows
         shell: powershell
@@ -136,7 +113,7 @@ jobs:
           node-version: '20'
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Rebuild native modules for Electron
         run: npx @electron/rebuild --force

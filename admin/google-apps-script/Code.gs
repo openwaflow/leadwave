@@ -442,7 +442,7 @@ function handleCreateLicense(d, reseller) {
   // Pre-bind in Activations sheet
   var actSh = ss.getSheetByName("Activations");
   if (actSh) {
-    actSh.appendRow([Utilities.getUuid(), key, rawHex, name, now.toISOString(), now.toISOString(), "9.0.0", "active"]);
+    actSh.appendRow([Utilities.getUuid(), key, rawHex, name, now.toISOString(), now.toISOString(), "1.0.0", "active"]);
   }
 
   // Record transaction if reseller
@@ -567,7 +567,7 @@ function handleValidateLicense(key, machineId) {
     }
     if (!bound) {
       if (boundCnt >= maxDev) return ok({ valid: false, error: "Device limit reached (" + boundCnt + "/" + maxDev + ")", error_code: "MAX_DEVICES_REACHED" });
-      act.appendRow([Utilities.getUuid(), cleanKey, cleanMachineHex, custName, new Date().toISOString(), new Date().toISOString(), "9.0.0", "active"]);
+      act.appendRow([Utilities.getUuid(), cleanKey, cleanMachineHex, custName, new Date().toISOString(), new Date().toISOString(), "1.0.0", "active"]);
       boundCnt++;
       lic.getRange(rowIdx, 13).setValue(boundCnt);
     }
@@ -881,7 +881,7 @@ function handleRequestTrial(d) {
   if (!actSh) { initDatabase(); actSh = ss.getSheetByName("Activations"); }
   actSh.appendRow([
     Utilities.getUuid(), key, machineId, name,
-    now.toISOString(), now.toISOString(), "9.0.0", "active"
+    now.toISOString(), now.toISOString(), "1.0.0", "active"
   ]);
   licSh.getRange(licSh.getLastRow(), 13).setValue(1); // active_devices = 1
 

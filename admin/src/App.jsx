@@ -160,13 +160,18 @@ export default function App() {
           WG
         </div>
         <div>
-          <div className="font-extrabold text-white text-base tracking-tight leading-none">
-            WAGrow CRM
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold text-white text-base tracking-tight leading-none">
+              WAGrow
+            </span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+              v1.0.0
+            </span>
           </div>
           <div className="flex items-center gap-1.5 mt-1.5">
             <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
             <span className="text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
-              {isReseller ? 'Reseller Portal' : 'Super Admin'}
+              {isReseller ? 'Reseller Portal' : 'Admin Center'}
             </span>
           </div>
         </div>
@@ -236,6 +241,9 @@ export default function App() {
           <span>🚪</span>
           <span>Logout Portal</span>
         </button>
+        <div className="pt-2 text-center text-[10px] text-slate-500 font-mono tracking-wider">
+          WAGrow Admin v1.0.0
+        </div>
       </div>
     </div>
   );

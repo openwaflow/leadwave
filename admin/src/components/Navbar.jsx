@@ -7,15 +7,18 @@ export default function Navbar({ onOpenGenerate, onOpenSettings, onLogout, isOnl
         
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="WAGrow" className="h-11 w-11 rounded-xl object-contain shadow-lg shadow-rose-500/20" />
+          <img src="/logo.png" alt="WAGrow" className="h-10 w-10 rounded-xl object-contain shadow-md shadow-emerald-500/20" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-xl tracking-tight text-white">WAGrow</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                PRO ADMIN
+              <span className="font-extrabold text-lg tracking-tight text-white">WAGrow</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                v1.0.0
+              </span>
+              <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-800 text-slate-300">
+                ADMIN
               </span>
             </div>
-            <p className="text-xs text-slate-400">License & Activation Center</p>
+            <p className="text-[11px] text-slate-400">License & Activation Center</p>
           </div>
         </div>
 

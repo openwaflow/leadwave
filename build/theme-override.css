@@ -1,0 +1,127 @@
+/* ==============================================================================
+   WAGrow Desktop App — Modern Theme & High Contrast UI Fixes
+   ============================================================================== */
+
+/* Force clean dark mode */
+html, html.dark, body {
+  color-scheme: dark !important;
+  background-color: #0B0F19 !important;
+  color: #F8FAFC !important;
+}
+
+/* Fix black text on dark card backgrounds */
+.text-gray-900,
+.text-slate-900,
+.text-zinc-900,
+.text-neutral-900,
+.text-gray-800,
+.text-slate-800,
+.text-zinc-800 {
+  color: #F8FAFC !important;
+}
+
+.text-gray-700,
+.text-slate-700,
+.text-zinc-700 {
+  color: #E2E8F0 !important;
+}
+
+.text-gray-600,
+.text-slate-600,
+.text-zinc-600 {
+  color: #94A3B8 !important;
+}
+
+.text-gray-500,
+.text-slate-500 {
+  color: #64748B !important;
+}
+
+/* Headings contrast */
+h1, h2, h3, h4, h5, h6 {
+  color: #FFFFFF !important;
+}
+
+/* Single Message & Card Header Contrast */
+.p-6 h1, .p-6 .text-2xl {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Form inputs & select dropdowns */
+select, 
+input[type="text"], 
+input[type="number"], 
+input[type="password"], 
+textarea {
+  background-color: #111827 !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  border-color: #10B981 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+select option {
+  background-color: #0F172A !important;
+  color: #F8FAFC !important;
+}
+
+/* ==============================================================================
+   WhatsApp Connection Banner — Minimal & Clean
+   ============================================================================== */
+
+/* Hide raw session debug JSON dump and debug line */
+.bg-yellow-50 pre,
+pre.text-xs.text-yellow-600,
+.bg-yellow-50 .text-yellow-600 {
+  display: none !important;
+}
+
+/* Make connection warning look sleek and modern */
+.bg-yellow-50 {
+  background: rgba(245, 158, 11, 0.08) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  border-radius: 14px !important;
+  padding: 16px 20px !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.bg-yellow-50 h3 {
+  color: #FBBF24 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+.bg-yellow-50 p {
+  color: #FDE68A !important;
+  font-size: 13px !important;
+}
+
+/* Buttons Styling */
+button.bg-gray-800, 
+button.bg-gray-700 {
+  background-color: #1E293B !important;
+  color: #E2E8F0 !important;
+  border: 1px solid #334155 !important;
+  transition: all 0.2s ease !important;
+}
+
+button.bg-gray-800:hover, 
+button.bg-gray-700:hover {
+  background-color: #334155 !important;
+  color: #FFFFFF !important;
+}
+
+/* Version badge */
+.badge-version {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34D399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border-radius: 6px !important;
+}

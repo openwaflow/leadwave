@@ -3,7 +3,7 @@
 const APP_CONFIG = {
   APP_NAME: 'WAGrow',
   APP_TAGLINE: 'WhatsApp Automation Platform',
-  APP_VERSION: 'v9.0.0',
+  APP_VERSION: 'v1.0.0',
   COMPANY_NAME: 'WAGrow',
   APP_ID: 'com.wagrow.desktop',
   get DEFAULT_DEVICE_NAME() {

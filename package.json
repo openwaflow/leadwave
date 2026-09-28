@@ -1,6 +1,6 @@
 {
   "name": "wagrow",
-  "version": "9.0.0",
+  "version": "1.0.0",
   "description": "WAGrow - WhatsApp automation desktop application",
   "main": "build/electron.js",
   "homepage": "./",

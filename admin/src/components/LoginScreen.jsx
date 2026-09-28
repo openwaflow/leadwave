@@ -111,11 +111,16 @@ export default function LoginScreen({ onLoginSuccess }) {
               WG
             </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            WAGrow CRM
-          </h1>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              WAGrow
+            </h1>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              v1.0.0
+            </span>
+          </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-medium">
-            Enterprise License &amp; Reseller Control Center
+            License &amp; Reseller Control Center
           </p>
 
           {/* Real-time Status Badge */}

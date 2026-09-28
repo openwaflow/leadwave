@@ -4,8 +4,10 @@ const {
   ipcMain,
   dialog,
   shell,
-  Notification
+  Notification,
+  nativeTheme
 } = require("electron");
+if (nativeTheme) nativeTheme.themeSource = "dark";
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
@@ -39,7 +41,7 @@ try {
     } catch (_0x3533f1) {
       if (isDev) {}
       packageJson = {
-        version: "9.0.0"
+        version: "1.0.0"
       };
     }
   }
@@ -3561,7 +3563,7 @@ ipcMain.handle("app-version", () => {
         _0x586e05 = require(path.join(__dirname, "../../package.json"));
       } catch (_0x246b83) {
         _0x586e05 = {
-          version: "9.0.0"
+          version: "1.0.0"
         };
       }
     }

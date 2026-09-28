@@ -1,6 +1,6 @@
-# Lead Wave - WhatsApp Automation & CRM Desktop Application
+# WAGrow - WhatsApp Automation & CRM Desktop Application
 
-Lead Wave is a full-featured desktop WhatsApp CRM and marketing automation software built with **Electron**, **React**, and **Baileys**.
+WAGrow is a full-featured desktop WhatsApp CRM and marketing automation software built with **Electron**, **React**, and **Baileys**.
 
 ## Features
 

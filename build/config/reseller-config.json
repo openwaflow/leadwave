@@ -1,7 +1,7 @@
 {
   "RESELLER_CODE": null,
   "RESELLER_INFO": {
-    "name": "Lead Wave",
+    "name": "WAGrow",
     "logo": null,
     "website": null,
     "support_email": null,
@@ -9,11 +9,12 @@
   },
   "LICENSE_SERVER": {
     "base_url": "https://license.getleadwave.in",
-    "api_version": "api"
+    "api_version": "api",
+    "gas_url": "https://script.google.com/macros/s/AKfycbz1XvaCZjCbonh1bqeNycOGFwFD7rApZUMuZb3XMOsIfJtoHlVFUqJILdfOVcRlEpk/exec"
   },
   "APP_BRANDING": {
     "show_reseller_info": false,
-    "custom_title": "Lead Wave",
+    "custom_title": "WAGrow",
     "splash_message": ""
   },
   "MASTER_ACCOUNT_MODE": true,

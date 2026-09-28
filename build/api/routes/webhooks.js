@@ -101,7 +101,7 @@ module.exports = (apiServer) => {
         event: 'test',
         timestamp: new Date().toISOString(),
         data: {
-          message: 'This is a test webhook from Lead Wave REST API'
+          message: 'This is a test webhook from WAGrow REST API'
         }
       };
 
@@ -172,7 +172,7 @@ async function sendWebhook(url, payload) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(data),
-          'User-Agent': 'Lead Wave-REST-API/1.0'
+          'User-Agent': 'WAGrow-REST-API/1.0'
         },
         timeout: 10000
       };

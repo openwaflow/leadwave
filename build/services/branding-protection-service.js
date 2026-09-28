@@ -12,12 +12,12 @@ class BrandingProtectionService {
   }
   getBrandingConfig() {
     return {
-      appName: "Lead Wave",
-      productName: "Lead Wave",
-      appId: "com.leadwave.whatsapp-desktop",
-      publisher: "Lead Wave",
-      copyright: "© 2025",
-      description: "Lead Wave WhatsApp automation desktop application built with Electron.js and Baileys",
+      appName: "WAGrow",
+      productName: "WAGrow",
+      appId: "com.wagrow.whatsapp-desktop",
+      publisher: "WAGrow",
+      copyright: "© 2026",
+      description: "WAGrow WhatsApp automation desktop application built with Electron.js and Baileys",
       protectedPackageKeys: ["name", "productName", "description", "author", "build.appId", "build.productName", "build.copyright", "build.win.publisherName"],
       protectedFiles: ["package.json", "build/package.json", "public/index.html", "src/index.html"]
     };

@@ -459,7 +459,7 @@ class AppService {
       console.error("Error during shutdown:", _0x3f3f6a);
     }
   }
-  async createWhatsAppSession(_0x1b8158 = "Lead Wave Device") {
+  async createWhatsAppSession(_0x1b8158 = "WAGrow Device") {
     if (!this.isInitialized) {
       const _0x2a1f00 = 90000;
       const _0x5c6228 = 500;

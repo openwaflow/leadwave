@@ -111,7 +111,7 @@ export default {
     "checking": "Kontrol ediyorum.",
     "leadWaveLogo": "Kurşun Dalga Logosu",
     "licenseRequired": "Lisans Gerekli",
-    "welcomeToLead Wave": "Lead Wave'e Hoş Geldiniz",
+    "welcomeToWAGrow": "WAGrow'e Hoş Geldiniz",
     "instructions": "Talimatlar",
     "instructionStep1": "Yukarıdaki lisans kodunu kopyalayın",
     "instructionStep2": "Yöneticinizle iletişime geçin",
@@ -4501,7 +4501,7 @@ export default {
     "failedToActivate": "Lisans etkinleştirilemedi",
     "renewedSuccessfully": "Lisans Başarıyla Yenilendi!",
     "licenseExpired": "Lisans Süresi Doldu",
-    "licenseExpiredMessage": "Lead Wave lisansınızın süresi doldu. Uygulamayı kullanmaya devam etmek için lütfen yeni bir lisans anahtarı girin."
+    "licenseExpiredMessage": "WAGrow lisansınızın süresi doldu. Uygulamayı kullanmaya devam etmek için lütfen yeni bir lisans anahtarı girin."
   },
   "liveChatV2": {
     "deleteNote": "Notu sil",
@@ -4527,7 +4527,7 @@ export default {
   },
   "restAPI": {
     "title": "REST API",
-    "subtitle": "Lead Wave'i harici uygulamalarla entegre edin",
+    "subtitle": "WAGrow'i harici uygulamalarla entegre edin",
     "serverStatus": "Sunucu Durumu",
     "running": "Koşmak",
     "stopped": "Durduruldu",

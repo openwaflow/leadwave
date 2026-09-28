@@ -1,7 +1,7 @@
 {
-  "short_name": "Lead Wave",
-  "name": "Lead Wave WhatsApp Desktop",
-  "description": "Lead Wave - WhatsApp automation desktop application",
+  "short_name": "WAGrow",
+  "name": "WAGrow WhatsApp Desktop",
+  "description": "WAGrow - WhatsApp automation desktop application",
   "icons": [
     {
       "src": "favicon.ico",

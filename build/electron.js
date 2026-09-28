@@ -20,7 +20,7 @@ try {
   } catch (_0x3b966e) {
     APP_CONFIG = {
       APP_CONFIG: {
-        APP_NAME: "Lead Wave"
+        APP_NAME: "WAGrow"
       }
     };
   }
@@ -85,7 +85,7 @@ try {
         isMasterAccountMode: () => true,
         getMasterAccountId: () => null,
         getResellerInfo: () => ({
-          name: "Lead Wave"
+          name: "WAGrow"
         }),
         getTrialRegistrationEndpoint: () => "local://keygen/trial/register",
         prepareTrialRegistrationData: _0x37de9f => ({
@@ -350,7 +350,7 @@ function logToFile(_0x28e331) {
   }
 }
 global.logToFile = logToFile;
-logToFile("🚀 Starting Lead Wave WhatsApp Desktop...");
+logToFile("🚀 Starting WAGrow WhatsApp Desktop...");
 const initializeBackupService = () => {
   if (!backupService && appService) {
     try {
@@ -570,7 +570,7 @@ ipcMain.handle("app:restart", async _0x36fc51 => {
     };
   }
 });
-const MUTEX_NAME = "Lead Wave WhatsAppDesktopMutex";
+const MUTEX_NAME = "WAGrow WhatsAppDesktopMutex";
 try {
   singleInstanceLock = app.requestSingleInstanceLock();
 } catch (_0x4038a8) {
@@ -927,7 +927,7 @@ async function initializeFallbackServices() {
       getDatabaseService: () => databaseService,
       getWhatsAppService: () => _0x36b38b,
       isInitialized: true,
-      async createWhatsAppSession(_0x1738ec = "Lead Wave Device") {
+      async createWhatsAppSession(_0x1738ec = "WAGrow Device") {
         try {
           const _0xb72297 = "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
           logToFile("🔄 Creating WhatsApp session: " + _0x1738ec + " (" + _0xb72297 + ")");
@@ -2334,6 +2334,171 @@ ipcMain.handle("license:register-trial", async (_0x28c5c8, _0x4ba8d6) => {
     };
   }
 });
+
+// ── WAGrow GAS Trial Handler ─────────────────────────────────────────────────
+ipcMain.handle("license:request-gas-trial", async (_evt, _params) => {
+  try {
+    const name     = (_params.name     || "").trim();
+    const mobile   = (_params.mobile   || "").trim();
+    let   gasUrl   = (_params.gas_url  || "").trim();
+    const machineId = generateMachineId();
+
+    if (!name || name.length < 2) {
+      return { success: false, message: "Apna naam likhein (kam se kam 2 characters)." };
+    }
+    const cleanMobile = mobile.replace(/[^0-9]/g, "");
+    if (!cleanMobile || cleanMobile.length < 10) {
+      return { success: false, message: "Valid WhatsApp number likhein (10+ digits)." };
+    }
+
+    if (!gasUrl) {
+      try {
+        const cfgPath = path.join(__dirname, "config/reseller-config.json");
+        if (fs.existsSync(cfgPath)) {
+          const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
+          gasUrl = cfg.gas_url || cfg.GAS_URL || cfg.LICENSE_SERVER?.gas_url || "";
+        }
+      } catch(e) {}
+    }
+    if (!gasUrl) {
+      gasUrl = process.env.GAS_API_URL || process.env.NEWLIC_API_URL || "";
+    }
+    if (!gasUrl) {
+      return { success: false, message: "Google Apps Script URL configure nahi hai. Admin se sampark karein." };
+    }
+
+    logToFile("🆓 WAGrow trial request: name=" + name + " mobile=" + cleanMobile + " machineId=" + machineId);
+
+    const fetch = require("node-fetch");
+    const payload = {
+      action: "requestTrial",
+      name: name,
+      mobile: cleanMobile,
+      machine_id: machineId
+    };
+
+    let result;
+    try {
+      const response = await fetch(gasUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload),
+        redirect: "follow",
+        timeout: 25000
+      });
+      result = await response.json();
+    } catch (netErr) {
+      logToFile("❌ Network request failed to GAS: " + netErr.message);
+      return {
+        success: false,
+        message: "Server se connect nahi ho saka. Internet connection check karein (" + netErr.message + ")."
+      };
+    }
+
+    logToFile("🆓 GAS trial response: " + JSON.stringify(result));
+
+    if (!result.success) {
+      if (result.error === "IS_DEVICE_USED") {
+        return {
+          success: false,
+          message: "Is computer par pehle hi 2 din ka trial liya ja chuka hai. Ek device par sirf ek baar trial milta hai. Kripya license purchase karein.",
+          error_code: "DEVICE_USED"
+        };
+      }
+      if (result.error === "IS_MOBILE_USED") {
+        return {
+          success: false,
+          message: "Is WhatsApp number se pehle hi trial liya ja chuka hai. Ek number par sirf ek baar trial milta hai.",
+          error_code: "MOBILE_USED"
+        };
+      }
+      return { success: false, message: result.error || "Trial activate karne mein samasya aayi." };
+    }
+
+    const trialDays = result.trial_days || 2;
+    const licenseData = {
+      license_key:    result.license_key,
+      customer_name:  result.customer_name || name,
+      mobile:         result.mobile || cleanMobile,
+      plan_name:      "Trial (" + trialDays + " Days)",
+      plan_type:      "trial",
+      plan:           "trial_" + trialDays + "_days",
+      expires_at:     result.expires_at,
+      machine_id:     machineId,
+      registered_at:  new Date().toISOString(),
+      activated_at:   new Date().toISOString(),
+      isTrial:        true,
+      trial_days:     trialDays,
+      status:         "active",
+      gas_url:        gasUrl,
+      modules:        ["bulk", "warmer", "ai-chatbot", "rest-api", "telegram"],
+      max_devices:    1,
+      source:         "gas_trial"
+    };
+
+    // 1. Add cryptographic signature for integrity check
+    addLicenseSignature(licenseData);
+
+    const appDataDir = getAppDataPath();
+    if (!fs.existsSync(appDataDir)) {
+      fs.mkdirSync(appDataDir, { recursive: true });
+    }
+
+    // 2. Save signed license.json
+    const licensePath = path.join(appDataDir, "license.json");
+    fs.writeFileSync(licensePath, JSON.stringify(licenseData, null, 2), "utf8");
+
+    // 3. Encrypt and save license.enc for NewLic service
+    try {
+      if (typeof newlicLicenseService !== "undefined" && newlicLicenseService && newlicLicenseService._encrypt) {
+        const enc = newlicLicenseService._encrypt(licenseData);
+        fs.writeFileSync(path.join(appDataDir, "license.enc"), enc, "utf8");
+        newlicLicenseService.set("license", {
+          key: result.license_key,
+          machineId: machineId,
+          activatedAt: new Date().toISOString(),
+          data: {
+            name: licenseData.customer_name,
+            mobile: licenseData.mobile,
+            plan: licenseData.plan,
+            modules: licenseData.modules,
+            max_devices: 1
+          },
+          expiresAt: result.expires_at
+        });
+      }
+    } catch (encErr) {
+      logToFile("⚠️ Error writing license.enc: " + encErr.message);
+    }
+
+    logToFile("✅ WAGrow trial license saved: " + result.license_key + " expires: " + result.expires_at);
+
+    // Auto-reload window to launch app directly
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        logToFile("🔄 Reloading window after trial activation...");
+        mainWindow.reload();
+      }
+    }, 1500);
+
+    return {
+      success: true,
+      message: "Trial successfully activated! Software " + trialDays + " din ke liye chalu ho gaya hai.",
+      license_key: result.license_key,
+      customer_name: result.customer_name,
+      expires_at: result.expires_at,
+      expires_at_formatted: result.expires_at_formatted,
+      trial_days: trialDays
+    };
+  } catch (err) {
+    logToFile("❌ GAS trial error: " + err.message);
+    return {
+      success: false,
+      message: "Internet connection check karein aur dobara try karein.\n\nError: " + err.message
+    };
+  }
+});
+
 ipcMain.handle("license:validate", async _0x2a2478 => {
   try {
     const _0x1b551b = getAppDataPath();

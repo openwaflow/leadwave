@@ -565,7 +565,7 @@ class UpdateService {
   showNoUpdateDialog() {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send("update-no-update", {
-        message: "You are running the latest version of Lead Wave."
+        message: "You are running the latest version of WAGrow."
       });
     }
   }
@@ -613,7 +613,7 @@ class UpdateService {
       const _0x3e74a5 = require("path");
       const _0xb4210c = require("fs").promises;
       const _0x11caba = _0x8a7372.getPath("downloads");
-      const _0x3f4d0a = "Lead Wave Setup " + (this.updateInfo?.version || "Latest") + ".exe";
+      const _0x3f4d0a = "WAGrow Setup " + (this.updateInfo?.version || "Latest") + ".exe";
       const _0x54384c = _0x3e74a5.join(_0x11caba, _0x3f4d0a);
       await _0xb4210c.copyFile(_0x4d5f0c, _0x54384c);
       this.logUpdate("Installer copied to: " + _0x54384c);
@@ -624,7 +624,7 @@ class UpdateService {
           defaultId: 1,
           title: "Installer Ready",
           message: "Update installer downloaded successfully",
-          detail: "The installer has been saved to your Downloads folder as:\n" + _0x3f4d0a + "\n\nTo preserve your WhatsApp sessions:\n1. Close Lead Wave completely\n2. Run the installer\n3. Choose \"Yes\" when asked to retain sessions\n\nWould you like to run the installer now or open the Downloads folder?"
+          detail: "The installer has been saved to your Downloads folder as:\n" + _0x3f4d0a + "\n\nTo preserve your WhatsApp sessions:\n1. Close WAGrow completely\n2. Run the installer\n3. Choose \"Yes\" when asked to retain sessions\n\nWould you like to run the installer now or open the Downloads folder?"
         });
         if (_0x236606.response === 0) {
           _0x468066.showItemInFolder(_0x54384c);
@@ -654,7 +654,7 @@ class UpdateService {
           defaultId: 0,
           title: "Confirm Installation",
           message: "Ready to install update",
-          detail: "This will close Lead Wave and install the update while preserving your WhatsApp sessions and data.\n\nProceed with installation?"
+          detail: "This will close WAGrow and install the update while preserving your WhatsApp sessions and data.\n\nProceed with installation?"
         });
         if (_0x3e6b2d.response !== 0) {
           return;

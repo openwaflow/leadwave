@@ -111,7 +111,7 @@ export default {
     "checking": "التحقق من...",
     "leadWaveLogo": "شعار الموجة الرصاصية",
     "licenseRequired": "الرخصة المطلوبة",
-    "welcomeToLead Wave": "مرحباً بك في ليد ويف",
+    "welcomeToWAGrow": "مرحباً بك في ليد ويف",
     "instructions": "التعليمات",
     "instructionStep1": "انسخ رمز الترخيص أعلاه",
     "instructionStep2": "اتصل بمسؤولك",
@@ -4517,7 +4517,7 @@ export default {
     "failedToActivate": "فشل في تفعيل الترخيص",
     "renewedSuccessfully": "تم تجديد الترخيص بنجاح!",
     "licenseExpired": "انتهت صلاحية الترخيص",
-    "licenseExpiredMessage": "انتهت صلاحية ترخيص Lead Wave الخاص بك. يرجى إدخال مفتاح ترخيص جديد لمتابعة استخدام التطبيق."
+    "licenseExpiredMessage": "انتهت صلاحية ترخيص WAGrow الخاص بك. يرجى إدخال مفتاح ترخيص جديد لمتابعة استخدام التطبيق."
   },
   "liveChatV2": {
     "deleteNote": "حذف الملاحظة",
@@ -4543,7 +4543,7 @@ export default {
   },
   "restAPI": {
     "title": "واجهة برمجة التطبيقات REST",
-    "subtitle": "دمج Lead Wave مع التطبيقات الخارجية",
+    "subtitle": "دمج WAGrow مع التطبيقات الخارجية",
     "serverStatus": "حالة الخادم",
     "running": "قيد التشغيل",
     "stopped": "متوقف",

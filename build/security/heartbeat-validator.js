@@ -298,7 +298,7 @@ class HeartbeatValidator {
         headers: {
           "Content-Type": _0x4f9f83(337),
           "Content-Length": Buffer.byteLength(_0x3e31db),
-          "User-Agent": "Lead Wave/" + app[_0x5b1832(269)]()
+          "User-Agent": "WAGrow/" + app[_0x5b1832(269)]()
         },
         timeout: 10000
       };

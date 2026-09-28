@@ -158,7 +158,7 @@ class RestAPIServer {
           return res.status(403).json({
             success: false,
             error: 'License required',
-            message: 'A valid Lead Wave license is required to use the REST API.'
+            message: 'A valid WAGrow license is required to use the REST API.'
           });
         }
 
@@ -606,7 +606,7 @@ class RestAPIServer {
    */
   getAPIDocumentation() {
     return {
-      title: 'Lead Wave REST API Documentation',
+      title: 'WAGrow REST API Documentation',
       version: '1.0.0',
       description: 'Complete REST API for integrating WhatsApp messaging with external systems',
       baseUrl: `http://localhost:${this.config.port}/api`,

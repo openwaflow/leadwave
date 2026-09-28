@@ -27,15 +27,51 @@ logs/
 Thumbs.db
 desktop.ini
 
-# Environment variables & local secrets
+# Environment variables & local secrets (CRITICAL - DO NOT COMMIT)
 .env
 .env.local
+.env.*.local
+*.env
 license.json
+license.enc
+newlic-license.enc
+machine-id.enc
+*.enc
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.cer
+*.crt
 
-# WhatsApp session auth files (user-specific, not for repo)
+# WhatsApp session auth files (user-specific runtime secrets)
 auth_sessions/
+auth_info_baileys/
+session/
+sessions/
 build/data/auth_*/
 build/data/session_*/
+build/data/tokens/
+
+# Admin Portal build & cache
+admin/node_modules/
+admin/dist/
+admin/.vercel/
+.vercel/
+
+# Agent internal data
+.agents/
+brain
+
+# Local convenience symlinks (point into build/)
+/api
+/config
+/database
+/models
+/security
+/services
+/utils
 
 # Temp files
 *.tmp

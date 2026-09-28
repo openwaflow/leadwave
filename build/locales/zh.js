@@ -97,7 +97,7 @@ export default {
     "loadingUser": "正在加载...",
     "pleaseWait": "请稍候",
     "removeLicense": "删除许可证",
-    "title": "Lead Wave",
+    "title": "WAGrow",
     "subtitle": "WhatsApp Automation Platform"
   },
   "license": {
@@ -113,7 +113,7 @@ export default {
     "checking": "检查...",
     "leadWaveLogo": "铅波徽标",
     "licenseRequired": "需要许可证",
-    "welcomeToLead Wave": "欢迎访问 Lead Wave",
+    "welcomeToWAGrow": "欢迎访问 WAGrow",
     "instructions": "说明",
     "instructionStep1": "复制上面的许可证代码",
     "instructionStep2": "联系您的管理员",
@@ -4536,7 +4536,7 @@ export default {
     "failedToActivate": "激活许可证失败",
     "renewedSuccessfully": "许可证成功续期！",
     "licenseExpired": "许可证过期",
-    "licenseExpiredMessage": "您的 Lead Wave 许可证已过期。请输入新的许可证密钥以继续使用该应用程序。"
+    "licenseExpiredMessage": "您的 WAGrow 许可证已过期。请输入新的许可证密钥以继续使用该应用程序。"
   },
   "liveChatV2": {
     "deleteNote": "删除注释",
@@ -4562,7 +4562,7 @@ export default {
   },
   "restAPI": {
     "title": "REST API",
-    "subtitle": "将Lead Wave与外部应用程序集成",
+    "subtitle": "将WAGrow与外部应用程序集成",
     "serverStatus": "服务器状态",
     "running": "运行中",
     "stopped": "已停止",

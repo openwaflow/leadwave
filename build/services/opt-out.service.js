@@ -18,7 +18,7 @@ class OptOutService {
       await this.databaseService.run("\n        INSERT OR IGNORE INTO opt_out_keywords (keyword, auto_response_template, case_sensitive, is_active)\n        VALUES\n        ('UNSUBSCRIBE', 'You have been unsubscribed from our messages. Reply SUBSCRIBE to opt back in.', 0, 1),\n        ('SUBSCRIBE', 'You have been subscribed to our messages. Reply UNSUBSCRIBE to unsubscribe.', 0, 1)\n      ");
       await this.databaseService.run("\n        DELETE FROM opt_out_keywords\n        WHERE keyword NOT IN ('SUBSCRIBE', 'UNSUBSCRIBE')\n      ");
       await this.databaseService.run("\n        CREATE TABLE IF NOT EXISTS opt_out_settings (\n          id INTEGER PRIMARY KEY,\n          subscribe_message TEXT,\n          unsubscribe_message TEXT,\n          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n        )\n      ");
-      await this.databaseService.run("\n        INSERT OR IGNORE INTO opt_out_settings (id, subscribe_message, unsubscribe_message)\n        VALUES (1,\n          'You have been subscribed to Lead Wave messages. Reply UNSUBSCRIBE to unsubscribe.',\n          'You have been unsubscribed from Lead Wave messages. Reply SUBSCRIBE to opt back in.'\n        )\n      ");
+      await this.databaseService.run("\n        INSERT OR IGNORE INTO opt_out_settings (id, subscribe_message, unsubscribe_message)\n        VALUES (1,\n          'You have been subscribed to WAGrow messages. Reply UNSUBSCRIBE to unsubscribe.',\n          'You have been unsubscribed from WAGrow messages. Reply SUBSCRIBE to opt back in.'\n        )\n      ");
     } catch (_0x109242) {
       this.logger.error("Error creating opt-out tables:", _0x109242);
       throw _0x109242;
@@ -199,7 +199,7 @@ class OptOutService {
           method: "keyword",
           sessionId: _0x2e7320
         });
-        const _0x4132af = _0x4e4ce4?.subscribe_message || "You have been subscribed to Lead Wave messages. Reply UNSUBSCRIBE to unsubscribe.";
+        const _0x4132af = _0x4e4ce4?.subscribe_message || "You have been subscribed to WAGrow messages. Reply UNSUBSCRIBE to unsubscribe.";
         return {
           isOptOutKeyword: true,
           action: "opt_in",
@@ -212,7 +212,7 @@ class OptOutService {
           reason: "Keyword: UNSUBSCRIBE",
           sessionId: _0x2e7320
         });
-        const _0x464485 = _0x4e4ce4?.unsubscribe_message || "You have been unsubscribed from Lead Wave messages. Reply SUBSCRIBE to opt back in.";
+        const _0x464485 = _0x4e4ce4?.unsubscribe_message || "You have been unsubscribed from WAGrow messages. Reply SUBSCRIBE to opt back in.";
         return {
           isOptOutKeyword: true,
           action: "opt_out",

@@ -109,9 +109,9 @@ export default {
     "expiredRenew": "Срок действия вашей лицензии истек. Для продления обратитесь в службу поддержки.",
     "trial": "Пробная версия",
     "checking": "Проверка...",
-    "leadWaveLogo": "Логотип Lead Wave",
+    "leadWaveLogo": "Логотип WAGrow",
     "licenseRequired": "Требуется лицензия",
-    "welcomeToLead Wave": "Добро пожаловать в Lead Wave",
+    "welcomeToWAGrow": "Добро пожаловать в WAGrow",
     "instructions": "Инструкции",
     "instructionStep1": "Скопируйте приведенный выше код лицензии",
     "instructionStep2": "Обратитесь к вашему администратору",
@@ -4500,7 +4500,7 @@ export default {
     "failedToActivate": "Не удалось активировать лицензию",
     "renewedSuccessfully": "Лицензия успешно продлена!",
     "licenseExpired": "Срок действия лицензии истек",
-    "licenseExpiredMessage": "Срок действия вашей лицензии Lead Wave истек. Введите новый лицензионный ключ, чтобы продолжить работу с приложением."
+    "licenseExpiredMessage": "Срок действия вашей лицензии WAGrow истек. Введите новый лицензионный ключ, чтобы продолжить работу с приложением."
   },
   "liveChatV2": {
     "deleteNote": "Удалить заметку",
@@ -4526,7 +4526,7 @@ export default {
   },
   "restAPI": {
     "title": "REST API",
-    "subtitle": "Интегрируйте Lead Wave с внешними приложениями",
+    "subtitle": "Интегрируйте WAGrow с внешними приложениями",
     "serverStatus": "Состояние сервера",
     "running": "Бег",
     "stopped": "Остановлено",

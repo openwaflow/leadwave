@@ -123,7 +123,7 @@ class WhatsAppService extends EventEmitter {
     this.msgRetryCounterCache = new NodeCache({
       stdTTL: 3600
     });
-    this.defaultPushName = "Lead Wave";
+    this.defaultPushName = "WAGrow";
     this._versionInitPromise = this.initializeBaileysVersion();
   }
   async _fetchVersionFromUrl(_0x45702d, _0x26c018) {

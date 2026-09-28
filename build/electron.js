@@ -2522,7 +2522,7 @@ async function activateGasLicenseKey(rawKey, gasUrlInput) {
       return { success: false, message: "Kripya License Key enter karein." };
     }
 
-    const gasUrl = gasUrlInput || "https://script.google.com/macros/s/AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc/exec";
+    const gasUrl = gasUrlInput || "https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec";
     const machineId = generateMachineId();
     const userCode = "USER-" + machineId.slice(0, 8) + "-" + machineId.slice(8, 16);
     logToFile("🔑 [GAS Paid Key Activation] Key: " + rawKey + " UserCode: " + userCode);
@@ -2974,7 +2974,7 @@ ipcMain.handle("license:check-status", async (_0x21b340, _0x3cc0e1) => {
     if (_0x3cc0e1.startsWith("LW-")) {
       logToFile("🌐 Checking LW- key status with Google Apps Script server: " + _0x3cc0e1);
       try {
-        const gasUrl = "https://script.google.com/macros/s/AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc/exec";
+        const gasUrl = "https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec";
         const machineId = generateMachineId();
         const userCode = "USER-" + machineId.slice(0, 8) + "-" + machineId.slice(8, 16);
         const fetchWithRedirect = async (url, options, maxRedirects = 5) => {

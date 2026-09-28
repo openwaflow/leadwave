@@ -324,7 +324,7 @@ class NewLicLicenseService {
 
     if (_0x25ceba.startsWith("LW-")) {
       try {
-        const gasUrl = "https://script.google.com/macros/s/AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc/exec";
+        const gasUrl = "https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec";
         const m = String(_0x17e898 || "").trim().toUpperCase();
         const userCode = m.startsWith("USER-") ? m : (m.length >= 16 ? ("USER-" + m.slice(0, 8) + "-" + m.slice(8, 16)) : ("USER-" + m));
         const gasRes = await axios.post(gasUrl, JSON.stringify({
@@ -450,6 +450,9 @@ class NewLicLicenseService {
   async activateLicense(_0x16fe25, _0x409032) {
     try {
       _0x16fe25 = (_0x16fe25 || "").replace(/\s+/g, "");
+      if (!_0x409032) {
+        _0x409032 = this.loadMachineId();
+      }
       const _0x4ae466 = await this.validateLicenseWithAPI(_0x16fe25, _0x409032);
       if (!_0x4ae466.valid) {
         console.error("❌ NewLic: Validation failed:", _0x4ae466.error);

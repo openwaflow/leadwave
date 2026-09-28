@@ -11,13 +11,13 @@ const STORAGE = {
   ROLE:          'wg_role',
 };
 
-const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc/exec';
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec';
 
 export const auth = {
   getApiUrl: () => {
     try {
       const saved = localStorage.getItem(STORAGE.API_URL);
-      if (saved && saved.includes('AKfycbz1XvaCZjCbonh1bqeNycOGFwFD7rApZUMuZb3XMOsIfJtoHlVFUqJILdfOVcRlEpk')) {
+      if (saved && (saved.includes('AKfycbz1XvaCZjCbonh1bqeNycOGFwFD7rApZUMuZb3XMOsIfJtoHlVFUqJILdfOVcRlEpk') || saved.includes('AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc'))) {
         localStorage.setItem(STORAGE.API_URL, DEFAULT_GAS_URL);
         return DEFAULT_GAS_URL;
       }

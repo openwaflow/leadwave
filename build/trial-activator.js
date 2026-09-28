@@ -10,7 +10,7 @@
   let activatorInjected = false;
   let isSubmitting = false;
 
-  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc/exec';
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec';
 
   function injectStyles() {
     if (document.getElementById('wagrow-activator-styles')) return;

@@ -1801,6 +1801,22 @@ ipcMain.handle("license:activate", async (_0x35171c, _0x4ae721) => {
         };
       }
     }
+    // 1. Google Apps Script (GAS) Server Activation for LW- keys
+    if (_0x4ae721.startsWith("LW-")) {
+      try {
+        logToFile("🌐 Checking key with Google Apps Script server: " + _0x4ae721);
+        const gasRes = await activateGasLicenseKey(_0x4ae721);
+        if (gasRes && gasRes.success) {
+          logToFile("✅ License activated successfully via Google Apps Script!");
+          return gasRes;
+        } else if (gasRes && gasRes.error_code && gasRes.error_code !== "LICENSE_NOT_FOUND") {
+          return gasRes;
+        }
+      } catch (gasErr) {
+        logToFile("⚠️ GAS check error in license:activate: " + gasErr.message);
+      }
+    }
+
     const _0x2345ee = _0x4ae721.split("-");
     if (_0x2345ee.length === 5 && _0x2345ee[0] === "LW") {
       logToFile("🔍 Detected self-contained license format (Keygen generated)");
@@ -2499,16 +2515,17 @@ ipcMain.handle("license:request-gas-trial", async (_evt, _params) => {
   }
 });
 
-ipcMain.handle("license:activate-gas-key", async (_event, params) => {
+async function activateGasLicenseKey(rawKey, gasUrlInput) {
   try {
-    const rawKey = ((params && params.license_key) || "").trim();
+    rawKey = ((rawKey) || "").trim();
     if (!rawKey) {
       return { success: false, message: "Kripya License Key enter karein." };
     }
 
-    const gasUrl = (params && params.gas_url) || "https://script.google.com/macros/s/AKfycbz1XvaCZjCbonh1bqeNycOGFwFD7rApZUMuZb3XMOsIfJtoHlVFUqJILdfOVcRlEpk/exec";
+    const gasUrl = gasUrlInput || "https://script.google.com/macros/s/AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc/exec";
     const machineId = generateMachineId();
-    logToFile("🔑 [GAS Paid Key Activation] Key: " + rawKey + " Machine: " + machineId);
+    const userCode = "USER-" + machineId.slice(0, 8) + "-" + machineId.slice(8, 16);
+    logToFile("🔑 [GAS Paid Key Activation] Key: " + rawKey + " UserCode: " + userCode);
 
     // 1. Check Google Apps Script Database
     let gasResult = null;
@@ -2536,7 +2553,7 @@ ipcMain.handle("license:activate-gas-key", async (_event, params) => {
         body: JSON.stringify({
           action: "activateLicense",
           key: rawKey,
-          machine_id: machineId
+          machine_id: userCode
         })
       });
 
@@ -2552,21 +2569,33 @@ ipcMain.handle("license:activate-gas-key", async (_event, params) => {
 
     if (gasResult && gasResult.success && gasResult.valid && gasResult.data) {
       const data = gasResult.data;
+      const allModules = [
+        "proxies", "single-message", "templates", "contacts", "bulk-messages",
+        "warmer", "opt-out-management", "auto-reply", "chatbot", "support-bot",
+        "ai-chatbot", "call-responder", "follow-up", "recall-bot", "group-grabber",
+        "manage-group", "reports", "devices", "REST API", "incoming-messages",
+        "live-chat", "tg-dashboard", "tg-accounts", "tg-live-chat", "tg-broadcast",
+        "tg-groups", "tg-auto-responder", "tg-ai-agent"
+      ];
+
       const licenseData = {
         license_key:   data.license_key || rawKey,
         customer_name: data.customer_name || "Valued Client",
         plan_name:     data.plan_name || "Pro",
         plan_type:     (data.plan_type || "pro").toLowerCase(),
         plan:          (data.plan_name || "pro").toLowerCase(),
+        original_plan: data.plan_name || "Pro",
         expires_at:    data.expires_at,
+        expires_at_formatted: data.expires_at_formatted || new Date(data.expires_at).toLocaleDateString(),
         machine_id:    machineId,
         registered_at: new Date().toISOString(),
         activated_at:  new Date().toISOString(),
         isTrial:       false,
         status:        "active",
         gas_url:       gasUrl,
-        modules:       ["bulk", "warmer", "ai-chatbot", "rest-api", "telegram", "campaign-scheduler", "live-chat"],
+        modules:       allModules,
         max_devices:   data.max_devices || 1,
+        duration_days: data.days_remaining || 365,
         source:        "gas_paid"
       };
 
@@ -2613,55 +2642,36 @@ ipcMain.handle("license:activate-gas-key", async (_event, params) => {
       };
     } else if (gasResult && gasResult.error_code) {
       if (gasResult.error_code === "MAX_DEVICES_REACHED") {
-        return { success: false, message: "⚠️ Is license key ki device limit poori ho chuki hai. Admin se extra device add karwayein ya device reset karwayein." };
+        return { success: false, message: "⚠️ Is license key ki device limit poori ho chuki hai. Admin se extra device add karwayein ya device reset karwayein.", error_code: "MAX_DEVICES_REACHED" };
       }
       if (gasResult.error_code === "LICENSE_EXPIRED") {
-        return { success: false, message: "⚠️ Yeh license expire ho chuka hai. Kripya renew karein." };
+        return { success: false, message: "⚠️ Yeh license expire ho chuka hai. Kripya renew karein.", error_code: "EXPIRED" };
       }
       if (gasResult.error_code === "LICENSE_REVOKED") {
-        return { success: false, message: "⚠️ Yeh license admin dwara suspend/revoke kiya gaya hai." };
+        return { success: false, message: "⚠️ Yeh license admin dwara suspend/revoke kiya gaya hai.", error_code: "SUSPENDED" };
       }
       if (gasResult.error_code !== "LICENSE_NOT_FOUND") {
-        return { success: false, message: gasResult.error || "License verify nahi ho saka." };
+        return { success: false, message: gasResult.error || "License verify nahi ho saka.", error_code: gasResult.error_code };
       }
-    }
-
-    // 2. Try native activation fallback (for offline built-in key formats)
-    logToFile("🔄 Trying native activation fallback for key: " + rawKey);
-    try {
-      const nativeHandler = ipcMain._invokeHandlers ? ipcMain._invokeHandlers.get("license:activate") : null;
-      if (nativeHandler) {
-        const fallbackResult = await nativeHandler(null, rawKey);
-        if (fallbackResult && fallbackResult.success) {
-          setTimeout(() => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.reload();
-            }
-          }, 1500);
-          return {
-            success: true,
-            message: "🎉 License successfully activated! App start ho raha hai...",
-            data: fallbackResult.data
-          };
-        } else if (fallbackResult && fallbackResult.message) {
-          return { success: false, message: fallbackResult.message };
-        }
-      }
-    } catch (fbErr) {
-      logToFile("⚠️ Native fallback error: " + fbErr.message);
     }
 
     return {
       success: false,
-      message: "❌ Galat License Key hai ya key database mein nahi mili. Kripya check karke dobara enter karein."
+      message: "❌ Galat License Key hai ya key database mein nahi mili. Kripya check karke dobara enter karein.",
+      error_code: "LICENSE_NOT_FOUND"
     };
   } catch (err) {
-    logToFile("❌ activate-gas-key error: " + err.message);
+    logToFile("❌ activateGasLicenseKey error: " + err.message);
     return {
       success: false,
-      message: "License activate nahi ho saka: " + err.message
+      message: "License activate nahi ho saka: " + err.message,
+      error_code: "ACTIVATION_ERROR"
     };
   }
+}
+
+ipcMain.handle("license:activate-gas-key", async (_event, params) => {
+  return await activateGasLicenseKey(params?.license_key, params?.gas_url);
 });
 
 ipcMain.handle("license:validate", async _0x2a2478 => {
@@ -2680,130 +2690,120 @@ ipcMain.handle("license:validate", async _0x2a2478 => {
     }
     let _0x2cb877 = null;
     let _0x45e68f = null;
+
+    // 1. Check encrypted license.enc
     if (fs.existsSync(_0x48029e)) {
       try {
         logToFile("🔐 Found encrypted license.enc file, attempting to decrypt...");
         const _0x3c822d = require(resolveModulePath("services/newlic-license-service"));
         const _0x313420 = fs.readFileSync(_0x48029e, "utf8");
         _0x2cb877 = _0x3c822d._decrypt(_0x313420);
-        _0x45e68f = _0x2cb877.license_key;
-        logToFile("✅ Successfully decrypted license for: " + _0x2cb877.customer_name);
+        _0x45e68f = _0x2cb877?.license_key;
+        if (_0x2cb877) {
+          logToFile("✅ Successfully decrypted license for: " + _0x2cb877.customer_name);
+        }
       } catch (_0x4385e4) {
         if (_0x4385e4.message === "TAMPER_DETECTED") {
           logToFile("🚨 LICENSE TAMPERING DETECTED! Deleting corrupted file.");
-          fs.unlinkSync(_0x48029e);
+          try { fs.unlinkSync(_0x48029e); } catch (_) {}
           try {
             const _0x37ca65 = require(resolveModulePath("services/newlic-license-service"));
-            await _0x37ca65._reportTampering(_0x2cb877?.license_key, _0x2ac49e);
-          } catch (_0x4b9721) {
-            logToFile("Failed to report tampering: " + _0x4b9721.message);
-          }
+            await _0x37ca65._reportTampering(_0x45e68f, _0x2ac49e);
+          } catch (_0x4b9721) {}
           return {
             success: false,
             message: "License tampering detected. Please contact support.",
             error_code: "TAMPER_DETECTED"
           };
         }
-        logToFile("❌ Failed to decrypt license: " + _0x4385e4.message);
-        return {
-          success: false,
-          message: "Failed to decrypt license file",
-          error_code: "DECRYPT_ERROR"
-        };
+        logToFile("❌ Failed to decrypt license.enc: " + _0x4385e4.message);
       }
     }
+
+    // 2. Check plain license.json if not loaded from .enc
     if (!_0x2cb877 && fs.existsSync(_0x5efc76)) {
-      logToFile("📄 No encrypted license found, checking plain license.json (legacy)...");
-      _0x2cb877 = JSON.parse(fs.readFileSync(_0x5efc76, "utf8"));
-      logToFile("🔍 Found legacy license file for: " + _0x2cb877.customer_name);
-      if (!verifyLicenseIntegrity(_0x2cb877)) {
-        logToFile("❌ License file integrity check failed - file may have been tampered with");
-        fs.unlinkSync(licenseFile);
-        return {
-          success: false,
-          message: "License file has been corrupted or tampered with. Please reactivate your license.",
-          error_code: "LICENSE_TAMPERED"
-        };
+      try {
+        logToFile("📄 Checking plain license.json...");
+        _0x2cb877 = JSON.parse(fs.readFileSync(_0x5efc76, "utf8"));
+        _0x45e68f = _0x2cb877?.license_key;
+        logToFile("🔍 Found license file for: " + _0x2cb877?.customer_name);
+      } catch (jsonErr) {
+        logToFile("❌ Failed to parse license.json: " + jsonErr.message);
       }
-      if (_0x2cb877.expires_at) {
-        const _0x1ccaa7 = new Date(_0x2cb877.expires_at);
-        const _0xed1831 = new Date();
-        if (_0xed1831 > _0x1ccaa7) {
-          logToFile("❌ License expired: " + _0x1ccaa7.toISOString());
-          return {
-            success: false,
-            message: "License has expired",
-            error_code: "LICENSE_EXPIRED"
-          };
-        }
-        let _0x1fb488 = 5;
-        let _0x146419 = [];
-        if (_0x2cb877.license_key && _0x2cb877.license_key.startsWith("LW-")) {
-          try {
-            logToFile("🔍 Re-parsing license key to extract max_devices...");
-            const _0x122c26 = _0x2cb877.license_key.split("-");
-            if (_0x122c26.length === 5) {
-              const _0xc53dca = _0x122c26[1];
-              const _0x3b1cf0 = Buffer.from(_0xc53dca, "hex").toString("utf8");
-              const _0x211f8c = JSON.parse(_0x3b1cf0);
-              logToFile("🔍 Parsed license data: " + JSON.stringify(_0x211f8c));
-              _0x1fb488 = _0x211f8c.max_devices !== undefined ? _0x211f8c.max_devices : 5;
-              _0x146419 = _0x211f8c.modules || [];
-              logToFile("✅ Re-parsed license key - max_devices: " + _0x1fb488 + ", modules: " + _0x146419.length + " modules");
-            } else {
-              logToFile("⚠️ License key format invalid (" + _0x122c26.length + " parts), using defaults");
-              _0x1fb488 = _0x2cb877.max_devices || 5;
-              _0x146419 = _0x2cb877.modules || [];
-            }
-          } catch (_0x6570bb) {
-            logToFile("⚠️ Could not re-parse license key: " + _0x6570bb.message);
-            logToFile("⚠️ Using cached values - max_devices: " + (_0x2cb877.max_devices || 5));
-            console.error("⚠️ Could not re-parse license key:", _0x6570bb);
-            _0x1fb488 = _0x2cb877.max_devices || 5;
-            _0x146419 = _0x2cb877.modules || [];
+    }
+
+    // 3. Check Keygen database fallback if still not found
+    if (!_0x2cb877 && _0x26af68) {
+      try {
+        const keygenLics = _0x26af68.loadKeygenLicenses();
+        for (const lic of keygenLics) {
+          if (lic.activations && lic.activations.some(a => a.machine_id === _0x2ac49e)) {
+            _0x2cb877 = lic;
+            _0x45e68f = lic.license_key;
+            break;
           }
-        } else {
-          logToFile("⚠️ No valid license key found, using cached values");
-          _0x1fb488 = _0x2cb877.max_devices || 5;
-          _0x146419 = _0x2cb877.modules || [];
         }
-        logToFile("✅ License is valid until: " + _0x1ccaa7.toISOString());
-        return {
-          success: true,
-          data: {
-            license_key: _0x2cb877.license_key || "LOCAL_LICENSE",
-            customer_name: _0x2cb877.customer_name || "Licensed User",
-            plan_name: _0x2cb877.plan_name || "standard",
-            expires_at: _0x2cb877.expires_at,
-            expires_at_formatted: new Date(_0x2cb877.expires_at).toLocaleDateString(),
-            isTrial: _0x2cb877.isTrial || false,
-            isValid: true,
-            status: _0x2cb877.status || "active",
-            modules: _0x146419,
-            max_devices: _0x1fb488
-          }
-        };
-      } else {
-        logToFile("❌ License data missing expiry date");
-        return {
-          success: false,
-          message: "Invalid license data - missing expiry date",
-          error_code: "INVALID_LICENSE_DATA"
-        };
-      }
-    } else {
-      logToFile("🔍 No local license file found at: " + licenseFile);
+      } catch (_) {}
+    }
+
+    // If no license found anywhere
+    if (!_0x2cb877) {
+      logToFile("🔍 No local license file found");
       return {
         success: false,
         message: "No license found",
         error_code: "NO_LICENSE"
       };
     }
+
+    // 4. Validate license expiry & entitlements
+    if (_0x2cb877.expires_at) {
+      const _0x1ccaa7 = new Date(_0x2cb877.expires_at);
+      const _0xed1831 = new Date();
+      if (_0xed1831 > _0x1ccaa7) {
+        logToFile("❌ License expired: " + _0x1ccaa7.toISOString());
+        return {
+          success: false,
+          message: "License has expired",
+          error_code: "LICENSE_EXPIRED"
+        };
+      }
+
+      let _0x1fb488 = _0x2cb877.max_devices || 1;
+      let _0x146419 = (_0x2cb877.modules && _0x2cb877.modules.length > 0)
+        ? _0x2cb877.modules
+        : ["bulk", "warmer", "ai-chatbot", "rest-api", "telegram", "campaign-scheduler", "live-chat"];
+
+      logToFile("✅ License is valid until: " + _0x1ccaa7.toISOString());
+      return {
+        success: true,
+        data: {
+          license_key: _0x2cb877.license_key || "LOCAL_LICENSE",
+          customer_name: _0x2cb877.customer_name || "Licensed User",
+          plan_name: _0x2cb877.plan_name || _0x2cb877.plan || "Pro",
+          plan_type: _0x2cb877.plan_type || _0x2cb877.plan || "pro",
+          expires_at: _0x2cb877.expires_at,
+          expires_at_formatted: new Date(_0x2cb877.expires_at).toLocaleDateString(),
+          isTrial: _0x2cb877.isTrial || (_0x2cb877.plan_type === "trial") || false,
+          isValid: true,
+          status: _0x2cb877.status || "active",
+          modules: _0x146419,
+          max_devices: _0x1fb488
+        }
+      };
+    } else {
+      logToFile("❌ License data missing expiry date");
+      return {
+        success: false,
+        message: "Invalid license data - missing expiry date",
+        error_code: "INVALID_LICENSE_DATA"
+      };
+    }
   } catch (_0x2045c0) {
     logToFile("❌ Error validating license: " + _0x2045c0.message);
     return {
       success: false,
-      message: "Unable to validate your license. Please check your internet connection and try again, or contact your administrator for assistance.",
+      message: "Unable to validate your license: " + _0x2045c0.message,
       error: _0x2045c0.message
     };
   }
@@ -2950,6 +2950,86 @@ ipcMain.handle("license:check-status", async (_0x21b340, _0x3cc0e1) => {
   try {
     _0x3cc0e1 = _0x3cc0e1.trim();
     logToFile("🔍 Checking license status for: " + _0x3cc0e1);
+
+    if (_0x3cc0e1.startsWith("LW2.")) {
+      try {
+        const newlicSvc = require(resolveModulePath("services/newlic-license-service"));
+        const v2Res = newlicSvc._validateLicenseKeyV2(_0x3cc0e1);
+        if (v2Res.valid) {
+          return {
+            success: true,
+            data: {
+              status: "active",
+              expires_at: v2Res.expires_at ? v2Res.expires_at.toISOString() : null,
+              customer_name: v2Res.data.name || "Licensed User",
+              plan_type: v2Res.data.plan || "standard",
+              plan_name: v2Res.data.plan || "standard",
+              modules: v2Res.data.modules || []
+            }
+          };
+        }
+      } catch (_) {}
+    }
+
+    if (_0x3cc0e1.startsWith("LW-")) {
+      logToFile("🌐 Checking LW- key status with Google Apps Script server: " + _0x3cc0e1);
+      try {
+        const gasUrl = "https://script.google.com/macros/s/AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc/exec";
+        const machineId = generateMachineId();
+        const userCode = "USER-" + machineId.slice(0, 8) + "-" + machineId.slice(8, 16);
+        const fetchWithRedirect = async (url, options, maxRedirects = 5) => {
+          let currentUrl = url;
+          for (let i = 0; i < maxRedirects; i++) {
+            const resp = await fetch(currentUrl, options);
+            if ([301, 302, 303, 307, 308].includes(resp.status)) {
+              const location = resp.headers.get("location");
+              if (location) {
+                currentUrl = location;
+                options = { method: "GET" };
+                continue;
+              }
+            }
+            return resp;
+          }
+          throw new Error("Too many redirects");
+        };
+
+        const res = await fetchWithRedirect(`${gasUrl}?action=validateLicense&key=${encodeURIComponent(_0x3cc0e1)}&machine_id=${encodeURIComponent(userCode)}`);
+        const text = await res.text();
+        const gasJson = JSON.parse(text);
+        if (gasJson && gasJson.valid && gasJson.data) {
+          logToFile("✅ GAS check-status passed for: " + gasJson.data.customer_name);
+          const allModules = [
+            "proxies", "single-message", "templates", "contacts", "bulk-messages",
+            "warmer", "opt-out-management", "auto-reply", "chatbot", "support-bot",
+            "ai-chatbot", "call-responder", "follow-up", "recall-bot", "group-grabber",
+            "manage-group", "reports", "devices", "REST API", "incoming-messages",
+            "live-chat", "tg-dashboard", "tg-accounts", "tg-live-chat", "tg-broadcast",
+            "tg-groups", "tg-auto-responder", "tg-ai-agent"
+          ];
+          return {
+            success: true,
+            data: {
+              status: "active",
+              expires_at: gasJson.data.expires_at,
+              customer_name: gasJson.data.customer_name || "Licensed User",
+              plan_type: gasJson.data.plan_type || "Pro",
+              plan_name: gasJson.data.plan_name || "Pro",
+              modules: allModules
+            }
+          };
+        } else if (gasJson && !gasJson.valid && gasJson.error_code && gasJson.error_code !== "LICENSE_NOT_FOUND") {
+          return {
+            success: false,
+            error: gasJson.error,
+            error_code: gasJson.error_code
+          };
+        }
+      } catch (gasCheckErr) {
+        logToFile("⚠️ GAS check-status network error: " + gasCheckErr.message);
+      }
+    }
+
     const _0x3fbf5a = _0x3cc0e1.split("-");
     if (_0x3fbf5a.length === 5 && _0x3fbf5a[0] === "LW") {
       logToFile("🔍 Detected self-contained license format (Keygen generated)");
@@ -3238,9 +3318,21 @@ function getHeartbeatValidator() {
 }
 ipcMain.handle("newlic-license:activate", async (_0x57fa9e, _0x28f52f) => {
   try {
-    const _0x37ca74 = (_0x28f52f.licenseKey || "").replace(/\s+/g, "");
+    const _0x37ca74 = ((_0x28f52f && _0x28f52f.licenseKey) || "").replace(/\s+/g, "");
     const _0x43d3e4 = generateMachineId();
     logToFile("🔑 NewLic: Activating license: " + _0x37ca74);
+
+    if (_0x37ca74.startsWith("LW-")) {
+      const gasRes = await activateGasLicenseKey(_0x37ca74);
+      if (gasRes && gasRes.success) {
+        logToFile("✅ NewLic: GAS License activated successfully");
+        Object.keys(moduleValidationCache).forEach(_0x30fa4c => delete moduleValidationCache[_0x30fa4c]);
+      } else {
+        logToFile("❌ NewLic: GAS License activation failed: " + (gasRes?.message || ""));
+      }
+      return gasRes;
+    }
+
     const _0x2fb799 = await newlicLicenseService.activateLicense(_0x37ca74, _0x43d3e4);
     if (_0x2fb799.success) {
       logToFile("✅ NewLic: License activated successfully");
@@ -3267,6 +3359,56 @@ ipcMain.handle("newlic-license:activate", async (_0x57fa9e, _0x28f52f) => {
 ipcMain.handle("newlic-license:validate", async _0x4fa321 => {
   try {
     const _0x7d150c = generateMachineId();
+
+    // Check if we have an active license locally (license.enc or license.json)
+    const appDataDir = getAppDataPath();
+    const encPath = path.join(appDataDir, "license.enc");
+    const jsonPath = path.join(appDataDir, "license.json");
+    let activeLic = null;
+
+    if (fs.existsSync(encPath)) {
+      try {
+        const encData = fs.readFileSync(encPath, "utf8");
+        activeLic = newlicLicenseService._decrypt(encData);
+      } catch (_) {}
+    }
+    if (!activeLic && fs.existsSync(jsonPath)) {
+      try {
+        activeLic = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+      } catch (_) {}
+    }
+    if (!activeLic) {
+      activeLic = newlicLicenseService.get("license");
+    }
+
+    if (activeLic && (activeLic.expires_at || activeLic.expiresAt)) {
+      const expDate = new Date(activeLic.expires_at || activeLic.expiresAt);
+      if (Date.now() <= expDate.getTime()) {
+        const allModules = [
+          "proxies", "single-message", "templates", "contacts", "bulk-messages",
+          "warmer", "opt-out-management", "auto-reply", "chatbot", "support-bot",
+          "ai-chatbot", "call-responder", "follow-up", "recall-bot", "group-grabber",
+          "manage-group", "reports", "devices", "REST API", "incoming-messages",
+          "live-chat", "tg-dashboard", "tg-accounts", "tg-live-chat", "tg-broadcast",
+          "tg-groups", "tg-auto-responder", "tg-ai-agent"
+        ];
+        return {
+          valid: true,
+          data: {
+            name: activeLic.customer_name || activeLic.data?.name || "Licensed User",
+            customer_name: activeLic.customer_name || activeLic.data?.name || "Licensed User",
+            plan: activeLic.plan || activeLic.data?.plan || "pro",
+            plan_name: activeLic.plan_name || activeLic.data?.plan || "Pro",
+            modules: (activeLic.modules && activeLic.modules.length > 0) ? activeLic.modules : allModules,
+            max_devices: activeLic.max_devices || activeLic.data?.max_devices || 1,
+            expires_at: expDate.toISOString(),
+            status: "active"
+          },
+          expires_at: expDate
+        };
+      }
+    }
+
     const _0x4d7bd9 = await newlicLicenseService.checkLicense(_0x7d150c);
     return _0x4d7bd9;
   } catch (_0x563046) {
@@ -3279,7 +3421,24 @@ ipcMain.handle("newlic-license:validate", async _0x4fa321 => {
 });
 ipcMain.handle("newlic-license:get-info", async _0x50bdf7 => {
   try {
-    return newlicLicenseService.getLicenseInfo();
+    let info = newlicLicenseService.getLicenseInfo();
+    if (!info) {
+      const appDataDir = getAppDataPath();
+      const encPath = path.join(appDataDir, "license.enc");
+      const jsonPath = path.join(appDataDir, "license.json");
+      if (fs.existsSync(encPath)) {
+        try {
+          const encData = fs.readFileSync(encPath, "utf8");
+          info = newlicLicenseService._decrypt(encData);
+        } catch (_) {}
+      }
+      if (!info && fs.existsSync(jsonPath)) {
+        try {
+          info = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+        } catch (_) {}
+      }
+    }
+    return info;
   } catch (_0xfbd456) {
     logToFile("❌ NewLic: Error getting license info: " + _0xfbd456.message);
     return null;

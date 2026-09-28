@@ -57,14 +57,14 @@ class LocalLicenseService {
     }
   }
   validateLicenseKeyFormat(_0x3b2b06) {
-    const _0x1d0f5a = /^LW-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}$/;
+    const _0x1d0f5a = /^LW-[A-F0-9]{3,4}-[A-F0-9]{3,4}-[A-F0-9]{3,4}-[A-F0-9]{4}$/i;
     if (!_0x1d0f5a.test(_0x3b2b06)) {
       return false;
     }
     const _0x2eaea6 = _0x3b2b06.split("-");
     const _0x3a65b7 = _0x2eaea6.slice(1, 4);
-    const _0x104ec6 = _0x2eaea6[4];
-    const _0x443209 = _0x3a65b7.join("");
+    const _0x104ec6 = _0x2eaea6[4].toUpperCase();
+    const _0x443209 = _0x3a65b7.join("").toUpperCase();
     const _0x50e7e3 = crypto.createHash("md5").update(_0x443209).digest("hex").substring(0, 4).toUpperCase();
     return _0x104ec6 === _0x50e7e3;
   }

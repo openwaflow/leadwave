@@ -10,7 +10,7 @@ const {
 } = require("../security/license-public-key");
 class NewLicLicenseService {
   constructor() {
-    const _0x54ef75 = app.getPath("userData");
+    const _0x54ef75 = (app && typeof app.getPath === "function") ? app.getPath("userData") : path.join(require("os").homedir(), ".config", "WAGrow");
     this.storePath = path.join(_0x54ef75, "newlic-license.enc");
     this.machineIdPath = path.join(_0x54ef75, "machine-id.enc");
     this.apiUrl = process.env.NEWLIC_API_URL || "https://license.getleadwave.in/api";
@@ -25,8 +25,8 @@ class NewLicLicenseService {
     if (_0x365ed8.startsWith("LW2.") && _0x365ed8.split(".").length === 3) {
       return "v2";
     }
-    if (_0x365ed8.startsWith("LW-") && _0x365ed8.split("-").length === 5) {
-      return "v1";
+    if (_0x365ed8.startsWith("LW-")) {
+      return "gas";
     }
     return "unknown";
   }
@@ -321,6 +321,62 @@ class NewLicLicenseService {
         } catch (_0x4ebf16) {}
       }
     }
+
+    if (_0x25ceba.startsWith("LW-")) {
+      try {
+        const gasUrl = "https://script.google.com/macros/s/AKfycbyNtMq9Z1h8LL_wnzrt-QMUPPI8yKQyAhPmpDF4SAyM3m5BsLKyRzmfvrYbDO0O1Vc/exec";
+        const m = String(_0x17e898 || "").trim().toUpperCase();
+        const userCode = m.startsWith("USER-") ? m : (m.length >= 16 ? ("USER-" + m.slice(0, 8) + "-" + m.slice(8, 16)) : ("USER-" + m));
+        const gasRes = await axios.post(gasUrl, JSON.stringify({
+          action: "validateLicense",
+          key: _0x25ceba,
+          machine_id: userCode
+        }), {
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          maxRedirects: 5,
+          timeout: 25000
+        });
+        if (gasRes.data && gasRes.data.valid && gasRes.data.data) {
+          const d = gasRes.data.data;
+          const allModules = [
+            "proxies", "single-message", "templates", "contacts", "bulk-messages",
+            "warmer", "opt-out-management", "auto-reply", "chatbot", "support-bot",
+            "ai-chatbot", "call-responder", "follow-up", "recall-bot", "group-grabber",
+            "manage-group", "reports", "devices", "REST API", "incoming-messages",
+            "live-chat", "tg-dashboard", "tg-accounts", "tg-live-chat", "tg-broadcast",
+            "tg-groups", "tg-auto-responder", "tg-ai-agent"
+          ];
+          const formatted = {
+            valid: true,
+            data: {
+              name: d.customer_name || "Valued Client",
+              mobile: d.mobile || "",
+              plan: (d.plan_type || "pro").toLowerCase(),
+              max_devices: d.max_devices || 1,
+              max_tg_accounts: 100,
+              modules: allModules,
+              issued: Date.now() / 1000,
+              company_info: null,
+              machine_id: _0x17e898,
+              license_id: d.license_key
+            },
+            expires_at: new Date(d.expires_at)
+          };
+          this._cacheValidationResult(_0x25ceba, formatted);
+          return formatted;
+        } else if (gasRes.data && !gasRes.data.valid && gasRes.data.error_code) {
+          return {
+            valid: false,
+            error: gasRes.data.error || "License not valid",
+            error_code: gasRes.data.error_code
+          };
+        }
+      } catch (gasErr) {
+        console.error("⚠️ GAS validation error in NewLicService:", gasErr.message);
+        const cached = this._getCachedValidationResult(_0x25ceba);
+        if (cached) return cached;
+      }
+    }
     for (let _0x2a9e66 = 1; _0x2a9e66 <= _0x364e5e; _0x2a9e66++) {
       try {
         const _0x3bb22e = await axios.post(this.apiUrl + "/validate-license", {
@@ -426,10 +482,16 @@ class NewLicLicenseService {
         trial_7_days: "7 Days Trial"
       };
       const _0x4d6986 = _0x5276fb[_0x4ae466.data.plan] || _0x4ae466.data.plan;
-      const {
-        app: _0xfa5d35
-      } = require("electron");
-      const _0x3f6f81 = _0xfa5d35.getPath("userData");
+      let _0x3f6f81;
+      try {
+        const { app: _0xfa5d35 } = require("electron");
+        if (_0xfa5d35 && typeof _0xfa5d35.getPath === "function") {
+          _0x3f6f81 = _0xfa5d35.getPath("userData");
+        }
+      } catch (_err) {}
+      if (!_0x3f6f81) {
+        _0x3f6f81 = path.join(require("os").homedir(), ".config", "WAGrow");
+      }
       if (!fs.existsSync(_0x3f6f81)) {
         fs.mkdirSync(_0x3f6f81, {
           recursive: true

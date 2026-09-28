@@ -50,6 +50,8 @@ export default function LicenseTable({
       String(lic.mobile || '').includes(s) ||
       String(lic.email || '').toLowerCase().includes(s) ||
       String(lic.license_key || '').toLowerCase().includes(s) ||
+      String(lic.user_code || '').toLowerCase().includes(s) ||
+      String(lic.notes || '').toLowerCase().includes(s) ||
       String(lic.plan_type || '').toLowerCase().includes(s)
     );
   });
@@ -68,7 +70,7 @@ export default function LicenseTable({
             <input
               type="text"
               className="glass-input pl-10 text-xs sm:text-sm"
-              placeholder="Search by client name, mobile, key, or plan..."
+              placeholder="Search by client, device code, mobile, key, or plan..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -122,6 +124,7 @@ export default function LicenseTable({
           <thead>
             <tr className="border-b border-slate-800/80 bg-slate-900/60 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               <th className="py-3.5 px-4 sm:px-5">Client / Contact</th>
+              <th className="py-3.5 px-4">User Code</th>
               <th className="py-3.5 px-4">Plan / Validity</th>
               <th className="py-3.5 px-4">License Key</th>
               <th className="py-3.5 px-4">Expiry Date</th>
@@ -133,7 +136,7 @@ export default function LicenseTable({
           <tbody className="divide-y divide-slate-800/50">
             {loading ? (
               <tr>
-                <td colSpan={compact ? 6 : 7} className="py-12 text-center text-slate-400">
+                <td colSpan={compact ? 7 : 8} className="py-12 text-center text-slate-400">
                   <div className="flex items-center justify-center gap-3">
                     <span className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></span>
                     <span>Loading licenses from Google Sheets...</span>
@@ -142,7 +145,7 @@ export default function LicenseTable({
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={compact ? 6 : 7} className="py-12 text-center">
+                <td colSpan={compact ? 7 : 8} className="py-12 text-center">
                   <div className="max-w-xs mx-auto text-slate-400">
                     <span className="text-3xl block mb-2">🔑</span>
                     <p className="font-bold text-white text-sm">No licenses found</p>
@@ -188,6 +191,29 @@ export default function LicenseTable({
                           </span>
                         )}
                       </div>
+                    </td>
+
+                    {/* User Code / Device ID */}
+                    <td className="py-3.5 px-4">
+                      {(() => {
+                        const code = lic.user_code || (lic.notes ? (String(lic.notes).split('|')[0].trim().startsWith('USER-') ? String(lic.notes).split('|')[0].trim() : (String(lic.notes).trim().length === 16 ? 'USER-' + String(lic.notes).trim().slice(0,8) + '-' + String(lic.notes).trim().slice(8,16) : '')) : '') || '';
+                        return code ? (
+                          <div className="flex items-center gap-1.5">
+                            <code className="mono-text text-xs text-indigo-300 font-semibold bg-indigo-500/10 px-2 py-1 rounded border border-indigo-500/25 select-all">
+                              {code}
+                            </code>
+                            <button
+                              onClick={() => handleCopy(code)}
+                              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors text-xs"
+                              title="Copy Device ID"
+                            >
+                              {copiedKey === code ? '✅' : '📋'}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 text-xs">—</span>
+                        );
+                      })()}
                     </td>
 
                     {/* Plan */}

@@ -9,7 +9,7 @@ const {
 } = require("electron");
 class DatabaseService {
   constructor(_0x3ef454 = "wapp.db") {
-    const _0x1cdc46 = process.env.NODE_ENV === "development" || !app.isPackaged && process.env.NODE_ENV !== "production" || process.argv.includes("--dev") || __dirname.includes("src");
+    const _0x1cdc46 = process.env.NODE_ENV === "development" || (!app || !app.isPackaged) && process.env.NODE_ENV !== "production" || process.argv.includes("--dev") || __dirname.includes("src");
     if (_0x1cdc46) {
       this.dbPath = path.join(__dirname, "..", "data", "wapp.db");
       this.bundledDbPath = null;

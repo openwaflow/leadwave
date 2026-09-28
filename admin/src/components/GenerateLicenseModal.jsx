@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
   const [formData, setFormData] = useState({
     customer_name: '',
+    user_code: '',
     mobile: '',
     email: '',
     plan_type: 'Pro',
@@ -20,6 +21,10 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.user_code || !formData.user_code.trim()) {
+      alert('Device ID / User Code is required! Please enter the customer’s Device Code from their WAGrow app.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await onCreated(formData);
@@ -44,13 +49,15 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
   const getWhatsAppShareUrl = () => {
     if (!createdResult) return '#';
     const cleanPhone = String(formData.mobile || '').replace(/[^0-9]/g, '');
+    const userCodeText = createdResult.user_code || formData.user_code;
     const msg = encodeURIComponent(
       `🎉 Hello ${formData.customer_name},\n\n` +
       `Your WAGrow WhatsApp CRM License is ready!\n\n` +
       `🔑 License Key: ${createdResult.license_key}\n` +
+      `💻 Device ID: ${userCodeText}\n` +
       `📦 Plan: ${formData.plan_type}\n` +
       `⏳ Valid Till: ${new Date(createdResult.expires_at).toLocaleDateString()}\n` +
-      `💻 Allowed Devices: ${formData.max_devices}\n\n` +
+      `👥 Allowed Devices: ${formData.max_devices}\n\n` +
       `Download App: https://github.com/openwaflow/leadwave/releases\n\n` +
       `Thank you for choosing WAGrow CRM! 🚀`
     );
@@ -61,6 +68,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
     setCreatedResult(null);
     setFormData({
       customer_name: '',
+      user_code: '',
       mobile: '',
       email: '',
       plan_type: 'Pro',
@@ -125,9 +133,17 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
                   {copied ? 'Copied! ✓' : 'Copy'}
                 </button>
               </div>
-              <div className="text-xs text-slate-400 pt-2 flex justify-between">
-                <span>Client: <strong className="text-slate-200">{createdResult.customer_name}</strong></span>
-                <span>Plan: <strong className="text-slate-200">{createdResult.plan_type}</strong></span>
+              <div className="text-xs text-slate-400 pt-2 flex flex-col gap-1.5 border-t border-slate-800/80">
+                <div className="flex justify-between">
+                  <span>Client: <strong className="text-slate-200">{createdResult.customer_name}</strong></span>
+                  <span>Plan: <strong className="text-slate-200">{createdResult.plan_type}</strong></span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Device Bound:</span>
+                  <span className="mono-text font-semibold text-emerald-400 text-xs bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    {createdResult.user_code || formData.user_code}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -167,6 +183,27 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
                 value={formData.customer_name}
                 onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
               />
+            </div>
+
+            {/* Device ID / User Code (Mandatory) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Device ID / User Code <span className="text-emerald-400">*</span>
+                </label>
+                <span className="text-[10px] text-emerald-400/80">From customer's WAGrow app</span>
+              </div>
+              <input
+                type="text"
+                required
+                className="glass-input mono-text font-semibold uppercase tracking-wider text-emerald-400 placeholder:text-slate-600"
+                placeholder="e.g. USER-A0C2E4C7-CDC90AFB"
+                value={formData.user_code}
+                onChange={(e) => setFormData({ ...formData, user_code: e.target.value.trim().toUpperCase() })}
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Client PC ka Device Code daalein. Bina Device ID ke license dusre PC par kaam nahi karega.
+              </p>
             </div>
 
             {/* Mobile & Email */}

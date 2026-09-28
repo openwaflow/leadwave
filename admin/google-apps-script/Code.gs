@@ -359,15 +359,32 @@ function handleListLicenses(search, statusFilter, resellerFilter) {
 
     if (statusFilter && statusFilter !== "all" && st !== statusFilter) return;
     if (resellerFilter && resellerFilter !== "all" && String(r[13]) !== String(resellerFilter)) return;
+
+    var rawNotes = String(r[15] || "").trim();
+    var userCode = "";
+    if (rawNotes) {
+      var noteParts = rawNotes.split("|");
+      var candidate = noteParts[0].trim();
+      if (candidate.startsWith("USER-") || candidate.length === 16) {
+        userCode = candidate;
+        if (!userCode.startsWith("USER-") && userCode.length === 16) {
+          userCode = "USER-" + userCode.slice(0, 8) + "-" + userCode.slice(8, 16);
+        }
+      }
+    }
+
     if (q) {
       var match = (r[2]||"").toLowerCase().includes(q) ||
                   (r[1]||"").toLowerCase().includes(q) ||
                   (r[3]||"").toString().includes(q)    ||
-                  (r[4]||"").toLowerCase().includes(q);
+                  (r[4]||"").toLowerCase().includes(q) ||
+                  userCode.toLowerCase().includes(q)   ||
+                  rawNotes.toLowerCase().includes(q);
       if (!match) return;
     }
     list.push({
       id: r[0], license_key: r[1], customer_name: r[2],
+      user_code: userCode,
       mobile: r[3], email: r[4], plan_type: r[5],
       validity_days: r[6], price: r[7],
       created_at: r[8], expires_at: r[9], status: st,
@@ -398,7 +415,20 @@ function handleCreateLicense(d, reseller) {
   var validDays   = parseInt(d.validity_days) || 365;
   var price       = parseFloat(d.price) || 0;
   var maxDevices  = parseInt(d.max_devices)  || 1;
-  var notes       = d.notes || "";
+  
+  var userCode = String(d.user_code || d.machine_id || "").trim().toUpperCase();
+  if (!userCode) {
+    return fail("Device ID / User Code is required (e.g. USER-A0C2E4C7-CDC90AFB)");
+  }
+  var rawHex = userCode.replace(/^USER-/, "").replace(/-/g, "");
+  if (rawHex.length === 16 && !userCode.startsWith("USER-")) {
+    userCode = "USER-" + rawHex.slice(0, 8) + "-" + rawHex.slice(8, 16);
+  }
+  var notes = userCode;
+  if (d.notes && d.notes.trim()) {
+    notes = userCode + " | " + d.notes.trim();
+  }
+
   var resId       = reseller ? reseller.id : (d.reseller_id || "");
   var resName     = reseller ? reseller.name : (d.reseller_name || "Admin");
 
@@ -407,7 +437,13 @@ function handleCreateLicense(d, reseller) {
 
   sh.appendRow([id, key, name, mobile, email, planType, validDays, price,
     now.toISOString(), expiresAt.toISOString(), "active",
-    maxDevices, 0, resId, resName, notes]);
+    maxDevices, 1, resId, resName, notes]);
+
+  // Pre-bind in Activations sheet
+  var actSh = ss.getSheetByName("Activations");
+  if (actSh) {
+    actSh.appendRow([Utilities.getUuid(), key, rawHex, name, now.toISOString(), now.toISOString(), "9.0.0", "active"]);
+  }
 
   // Record transaction if reseller
   if (reseller && price > 0) {
@@ -419,7 +455,7 @@ function handleCreateLicense(d, reseller) {
 
   return ok({
     message: "License created",
-    license: { id, license_key: key, customer_name: name, plan_type: planType, expires_at: expiresAt.toISOString(), price, reseller_name: resName }
+    license: { id, license_key: key, customer_name: name, user_code: userCode, plan_type: planType, expires_at: expiresAt.toISOString(), price, reseller_name: resName }
   });
 }
 
@@ -486,10 +522,11 @@ function handleValidateLicense(key, machineId) {
   var act = ss.getSheetByName("Activations");
   if (!lic) return fail("Database not initialized");
 
+  var cleanKey = String(key).trim().toUpperCase();
   var rows = lic.getDataRange().getValues();
   var row = null, rowIdx = -1;
   for (var i = 1; i < rows.length; i++) {
-    if (rows[i][1] === key.trim()) { row = rows[i]; rowIdx = i + 1; break; }
+    if (String(rows[i][1]).trim().toUpperCase() === cleanKey) { row = rows[i]; rowIdx = i + 1; break; }
   }
   if (!row) return ok({ valid: false, error: "License not found", error_code: "LICENSE_NOT_FOUND" });
 
@@ -504,14 +541,25 @@ function handleValidateLicense(key, machineId) {
   var maxDev   = parseInt(row[11]) || 1;
   var custName = row[2];
   var planType = row[5];
+  var rawNotes = String(row[15] || "").trim();
+
+  // Extract user code
+  var userCodeDisplay = rawNotes.split("|")[0].trim();
+  if (!userCodeDisplay.startsWith("USER-") && userCodeDisplay.length === 16) {
+    userCodeDisplay = "USER-" + userCodeDisplay.slice(0, 8) + "-" + userCodeDisplay.slice(8, 16);
+  }
 
   if (machineId && act) {
+    var cleanMachine = String(machineId).trim().toUpperCase();
+    var cleanMachineHex = cleanMachine.replace(/^USER-/, "").replace(/-/g, "");
     var aData  = act.getDataRange().getValues();
     var bound  = false, boundCnt = 0;
     for (var a = 1; a < aData.length; a++) {
-      if (aData[a][1] === key.trim()) {
+      if (String(aData[a][1]).trim().toUpperCase() === cleanKey) {
         boundCnt++;
-        if (aData[a][2] === machineId) {
+        var existingDev = String(aData[a][2]).trim().toUpperCase();
+        var existingHex = existingDev.replace(/^USER-/, "").replace(/-/g, "");
+        if (existingDev === cleanMachine || (existingHex.length >= 8 && existingHex === cleanMachineHex)) {
           bound = true;
           act.getRange(a + 1, 6).setValue(new Date().toISOString());
         }
@@ -519,7 +567,7 @@ function handleValidateLicense(key, machineId) {
     }
     if (!bound) {
       if (boundCnt >= maxDev) return ok({ valid: false, error: "Device limit reached (" + boundCnt + "/" + maxDev + ")", error_code: "MAX_DEVICES_REACHED" });
-      act.appendRow([Utilities.getUuid(), key.trim(), machineId, custName, new Date().toISOString(), new Date().toISOString(), "9.0.0", "active"]);
+      act.appendRow([Utilities.getUuid(), cleanKey, cleanMachineHex, custName, new Date().toISOString(), new Date().toISOString(), "9.0.0", "active"]);
       boundCnt++;
       lic.getRange(rowIdx, 13).setValue(boundCnt);
     }
@@ -529,6 +577,7 @@ function handleValidateLicense(key, machineId) {
     valid: true, success: true,
     data: {
       license_key: key, customer_name: custName,
+      user_code: userCodeDisplay,
       plan_name: planType, plan_type: planType,
       expires_at: new Date(exp).toISOString(),
       expires_at_formatted: new Date(exp).toLocaleDateString(),
@@ -753,10 +802,12 @@ function getSetting(key) {
 }
 
 function generateKey() {
-  function rh(n) { return ("000" + Math.floor(Math.random() * 65535).toString(16).toUpperCase()).slice(-n > 0 ? n : 4); }
-  var p1 = rh(4), p2 = rh(4), p3 = rh(4);
+  function rh() {
+    return ("0000" + Math.floor(Math.random() * 65536).toString(16).toUpperCase()).slice(-4);
+  }
+  var p1 = rh(), p2 = rh(), p3 = rh();
   var md5 = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, p1 + p2 + p3);
-  var ck  = md5.map(function(b) { var h = (b < 0 ? b + 256 : b).toString(16); return h.length===1?"0"+h:h; }).join("").toUpperCase().substring(0, 4);
+  var ck  = md5.map(function(b) { var h = (b < 0 ? b + 256 : b).toString(16); return h.length === 1 ? "0" + h : h; }).join("").toUpperCase().substring(0, 4);
   return "LW-" + p1 + "-" + p2 + "-" + p3 + "-" + ck;
 }
 

@@ -139,7 +139,7 @@ function getLicenseServerConfig() {
   const _0x2ccb3c = _0x2f999b;
   const _0x2c66da = loadEncryptedConfig();
   return _0x2c66da[_0x16d0c2(_0x5bba5f._0x2f3e28)] || {
-    base_url: "https://license.getleadwave.in",
+    base_url: "",
     api_version: _0x16d0c2(_0x5bba5f._0x468189)
   };
 }

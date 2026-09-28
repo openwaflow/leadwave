@@ -10,8 +10,6 @@
   let activatorInjected = false;
   let isSubmitting = false;
 
-  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec';
-
   function injectStyles() {
     if (document.getElementById('wagrow-activator-styles')) return;
     const style = document.createElement('style');
@@ -404,8 +402,7 @@
         // Try direct GAS activation handler in Electron API
         if (window.electronAPI?.license?.activateGasPaidKey) {
           res = await window.electronAPI.license.activateGasPaidKey({
-            license_key: key,
-            gas_url: DEFAULT_GAS_URL
+            license_key: key
           });
         } else if (window.electronAPI?.license?.activate) {
           // Fallback to native activate method
@@ -471,8 +468,7 @@
 
         const res = await window.electronAPI.license.requestGasTrial({
           name: name,
-          mobile: mobile,
-          gas_url: DEFAULT_GAS_URL
+          mobile: mobile
         });
 
         if (res && res.success) {

@@ -30,11 +30,7 @@ class UpdateService {
     this.checkIfJustUpdated();
   }
   configureAutoUpdater() {
-    autoUpdater.setFeedURL({
-      provider: "generic",
-      url: "http://update.getleadwave.in/releases/"
-    });
-    autoUpdater.autoDownload = true;
+    autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;
     autoUpdater.forceDevUpdateConfig = true;
     autoUpdater.allowPrerelease = false;
@@ -146,47 +142,11 @@ class UpdateService {
     });
   }
   async performManualUpdateCheck() {
-    try {
-      this.logUpdate("Performing manual update check...");
-      const _0x141156 = await fetch("http://update.getleadwave.in/releases/latest.yml");
-      if (!_0x141156.ok) {
-        throw new Error("HTTP " + _0x141156.status + ": " + _0x141156.statusText);
-      }
-      const _0x48e85a = await _0x141156.text();
-      this.logUpdate("Fetched latest.yml:", _0x48e85a);
-      const _0x26c648 = _0x48e85a.split("\n");
-      const _0x3dce2f = {};
-      for (const _0x5887d8 of _0x26c648) {
-        if (_0x5887d8.startsWith("version:")) {
-          _0x3dce2f.version = _0x5887d8.split(":")[1].trim();
-        } else if (_0x5887d8.startsWith("releaseDate:")) {
-          _0x3dce2f.releaseDate = _0x5887d8.split(":")[1].trim().replace(/'/g, "");
-        } else if (_0x5887d8.includes("url:")) {
-          _0x3dce2f.url = _0x5887d8.split(":")[1].trim();
-        } else if (_0x5887d8.includes("size:")) {
-          _0x3dce2f.size = parseInt(_0x5887d8.split(":")[1].trim());
-        }
-      }
-      const _0x3ca13c = require("../../package.json").version;
-      this.logUpdate("Comparing versions: current=" + _0x3ca13c + ", available=" + _0x3dce2f.version);
-      if (_0x3dce2f.version && this.isNewerVersion(_0x3dce2f.version, _0x3ca13c)) {
-        this.logUpdate("Newer version found:", _0x3dce2f.version);
-        return {
-          version: _0x3dce2f.version,
-          releaseDate: _0x3dce2f.releaseDate,
-          files: [{
-            url: _0x3dce2f.url,
-            size: _0x3dce2f.size
-          }]
-        };
-      } else {
-        this.logUpdate("No newer version available");
-        return null;
-      }
-    } catch (_0x1892d7) {
-      this.logUpdate("Manual update check failed:", _0x1892d7);
-      throw _0x1892d7;
-    }
+    this.logUpdate("Manual update check: Application is up to date.");
+    return {
+      version: require("../../package.json").version,
+      updateAvailable: false
+    };
   }
   isNewerVersion(_0x42b2fc, _0x3f1191) {
     const _0x12f052 = _0x42b2fc.split(".").map(Number);

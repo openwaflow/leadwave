@@ -1,4 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Users,
+  Plus,
+  MessageSquare,
+  Edit2,
+  Trash2,
+  PauseCircle,
+  PlayCircle,
+  X,
+  RefreshCw,
+  ArrowRight,
+  Shield,
+  DollarSign,
+  TrendingUp,
+  Percent,
+  CheckCircle2
+} from 'lucide-react';
 import { api } from '../services/api';
 
 const fmt = (n) => `₹${(parseFloat(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -82,7 +99,7 @@ export default function ResellersPage() {
     }
     const res = await api.settleCommission(settleTarget.id, settleAmt, 'Payout settlement');
     if (res?.success) {
-      alert('Commission payout recorded successfully! ✅');
+      alert('Commission payout recorded successfully!');
       loadResellers();
       setSettleTarget(null);
       setSettleAmt('');
@@ -95,13 +112,13 @@ export default function ResellersPage() {
     const ph = String(r.mobile || '').replace(/[^0-9]/g, '');
     const currentUrl = window.location.origin;
     const msg = encodeURIComponent(
-      `Namaste ${r.name}! 👋\n\n` +
-      `Aapka *WAGrow WhatsApp CRM* Reseller Portal ready hai! 🚀\n\n` +
-      `🌐 *Portal Link:* ${currentUrl}\n` +
-      `👤 *Reseller ID:* ${r.id}\n` +
-      `🔐 *PIN:* ${r.pin || '1234'}\n` +
-      `💼 *Aapka Commission:* ${r.commission_percent || 30}%\n\n` +
-      `Abhi login karein aur apne clients ke liye license key generate karein!`
+      `Hello ${r.name},\n\n` +
+      `Your WAGrow WhatsApp CRM Reseller Portal is ready!\n\n` +
+      `Portal Link: ${currentUrl}\n` +
+      `Reseller ID: ${r.id}\n` +
+      `PIN: ${r.pin || '1234'}\n` +
+      `Commission: ${r.commission_percent || 30}%\n\n` +
+      `Login to generate client licenses.`
     );
     window.open(`https://api.whatsapp.com/send?phone=${ph}&text=${msg}`, '_blank');
   };
@@ -115,27 +132,31 @@ export default function ResellersPage() {
       {/* Title & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-            <span>🏪</span>
+          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-indigo-400" />
             <span>Reseller Partner Network</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Empower your distribution partners to issue software licenses and earn commissions.
+            Empower your distribution partners to issue software licenses and track commission payouts.
           </p>
         </div>
 
         <button
           onClick={() => setShowCreate(true)}
-          className="btn-primary self-start sm:self-auto text-xs sm:text-sm py-2 px-4"
+          className="btn-primary self-start sm:self-auto text-xs sm:text-sm py-2 px-4 flex items-center gap-2"
         >
-          <span>+ Add New Reseller</span>
+          <Plus className="w-4 h-4" />
+          <span>Add New Reseller</span>
         </button>
       </div>
 
       {/* Mini Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="glass-panel p-5 rounded-xl border border-indigo-500/20 bg-indigo-500/5">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Partners</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Partners</span>
+            <Users className="w-4 h-4 text-indigo-400" />
+          </div>
           <div className="text-2xl sm:text-3xl font-black font-mono text-indigo-400 mt-1">
             {resellers.filter(r => r.status === 'active').length} / {resellers.length}
           </div>
@@ -143,7 +164,10 @@ export default function ResellersPage() {
         </div>
 
         <div className="glass-panel p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Partner Sales Volume</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Partner Sales Volume</span>
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
+          </div>
           <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-400 mt-1">
             {fmt(totalVolume)}
           </div>
@@ -151,7 +175,10 @@ export default function ResellersPage() {
         </div>
 
         <div className="glass-panel p-5 rounded-xl border border-amber-500/20 bg-amber-500/5">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Payout Balance</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pending Payout Balance</span>
+            <DollarSign className="w-4 h-4 text-amber-400" />
+          </div>
           <div className="text-2xl sm:text-3xl font-black font-mono text-amber-400 mt-1">
             {fmt(totalPending)}
           </div>
@@ -188,10 +215,10 @@ export default function ResellersPage() {
                 <tr>
                   <td colSpan={7} className="py-12 text-center">
                     <div className="max-w-xs mx-auto text-slate-400">
-                      <span className="text-3xl block mb-2">🏪</span>
+                      <Users className="w-8 h-8 mx-auto text-slate-600 mb-2" />
                       <p className="font-bold text-white text-sm">No reseller partners yet</p>
                       <p className="text-xs text-slate-500 mt-1">
-                        Click "+ Add New Reseller" to create your first partner account.
+                        Click "Add New Reseller" to create your first partner account.
                       </p>
                     </div>
                   </td>
@@ -206,8 +233,8 @@ export default function ResellersPage() {
                       
                       {/* Partner ID & Name */}
                       <td className="py-3.5 px-4 sm:px-5">
-                        <div className="font-bold text-white text-sm flex items-center gap-2">
-                          <span>{r.name}</span>
+                        <div className="font-bold text-white text-sm">
+                          {r.name}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <code className="text-[11px] font-mono font-bold text-indigo-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
@@ -224,9 +251,9 @@ export default function ResellersPage() {
                             href={`https://wa.me/${cleanPhone}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-emerald-400 hover:underline flex items-center gap-1 font-mono text-xs"
+                            className="text-emerald-400 hover:underline flex items-center gap-1.5 font-mono text-xs"
                           >
-                            <span>💬</span>
+                            <MessageSquare className="w-3 h-3" />
                             <span>{r.mobile}</span>
                           </a>
                         ) : (
@@ -264,9 +291,10 @@ export default function ResellersPage() {
                         {balance > 0 && (
                           <button
                             onClick={() => { setSettleTarget(r); setSettleAmt(balance.toString()); }}
-                            className="text-[10px] text-cyan-400 hover:underline font-semibold block mt-0.5"
+                            className="text-[10px] text-cyan-400 hover:underline font-semibold flex items-center gap-1 mt-0.5"
                           >
-                            Settle Payout →
+                            <span>Settle Payout</span>
+                            <ArrowRight className="w-3 h-3" />
                           </button>
                         )}
                       </td>
@@ -285,34 +313,38 @@ export default function ResellersPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleShareCredentials(r)}
-                            className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors text-xs font-bold"
+                            className="btn-icon-action hover:border-emerald-500/40 hover:text-emerald-400 hover:bg-emerald-500/10"
                             title="Send login credentials on WhatsApp"
                           >
-                            💬 WhatsApp Invite
+                            <MessageSquare className="w-3.5 h-3.5" />
                           </button>
 
                           <button
                             onClick={() => setEditTarget(r)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors text-xs"
+                            className="btn-icon-action hover:border-indigo-500/40 hover:text-indigo-400 hover:bg-indigo-500/10"
                             title="Edit Reseller"
                           >
-                            ⚙️
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
 
                           <button
                             onClick={() => handleToggleStatus(r)}
-                            className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors text-xs"
+                            className={`btn-icon-action ${
+                              r.status === 'active'
+                                ? 'hover:border-amber-500/40 hover:text-amber-400 hover:bg-amber-500/10'
+                                : 'hover:border-emerald-500/40 hover:text-emerald-400 hover:bg-emerald-500/10'
+                            }`}
                             title={r.status === 'active' ? 'Suspend Account' : 'Activate Account'}
                           >
-                            {r.status === 'active' ? '⏸️' : '▶️'}
+                            {r.status === 'active' ? <PauseCircle className="w-3.5 h-3.5" /> : <PlayCircle className="w-3.5 h-3.5" />}
                           </button>
 
                           <button
                             onClick={() => handleDelete(r)}
-                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors text-xs"
-                            title="Delete"
+                            className="btn-icon-action hover:border-rose-500/40 hover:text-rose-400 hover:bg-rose-500/10"
+                            title="Delete Reseller"
                           >
-                            🗑️
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -329,13 +361,15 @@ export default function ResellersPage() {
       {/* CREATE RESELLER MODAL */}
       {showCreate && (
         <div className="modal-backdrop">
-          <div className="modal-content p-6">
+          <div className="modal-content p-6 max-w-lg">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
               <div>
                 <h3 className="text-lg font-bold text-white">Add Reseller Partner</h3>
                 <p className="text-xs text-slate-400">Assign a partner ID, commission rate, and secret PIN</p>
               </div>
-              <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-white p-1">✕</button>
+              <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <form onSubmit={handleCreate} className="space-y-4">
@@ -407,7 +441,7 @@ export default function ResellersPage() {
                   Cancel
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary text-xs">
-                  {saving ? 'Creating Partner...' : 'Create Reseller Partner →'}
+                  {saving ? 'Creating Partner...' : 'Create Reseller Partner'}
                 </button>
               </div>
             </form>
@@ -418,13 +452,15 @@ export default function ResellersPage() {
       {/* EDIT RESELLER MODAL */}
       {editTarget && (
         <div className="modal-backdrop">
-          <div className="modal-content p-6">
+          <div className="modal-content p-6 max-w-lg">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
               <div>
                 <h3 className="text-lg font-bold text-white">Edit Reseller ({editTarget.id})</h3>
                 <p className="text-xs text-slate-400">Update contact or commission terms</p>
               </div>
-              <button onClick={() => setEditTarget(null)} className="text-slate-400 hover:text-white p-1">✕</button>
+              <button onClick={() => setEditTarget(null)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <form onSubmit={handleUpdate} className="space-y-4">
@@ -493,7 +529,9 @@ export default function ResellersPage() {
           <div className="modal-content p-6 max-w-md">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
               <h3 className="text-base font-bold text-white">Settle Reseller Payout</h3>
-              <button onClick={() => setSettleTarget(null)} className="text-slate-400 hover:text-white p-1">✕</button>
+              <button onClick={() => setSettleTarget(null)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <form onSubmit={handleSettle} className="space-y-4">

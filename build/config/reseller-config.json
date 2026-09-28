@@ -8,9 +8,8 @@
     "support_phone": null
   },
   "LICENSE_SERVER": {
-    "base_url": "https://license.getleadwave.in",
-    "api_version": "api",
-    "gas_url": "https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec"
+    "base_url": "",
+    "api_version": "api"
   },
   "APP_BRANDING": {
     "show_reseller_info": false,

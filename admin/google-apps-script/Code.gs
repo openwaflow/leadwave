@@ -72,7 +72,7 @@ function doPost(e) {
 
     // ── Public endpoints ──
     if (action === "validateLicense") return handleValidateLicense(d.key || d.licenseKey || d.license_code, d.machine_id || d.machineId);
-    if (action === "activateLicense") return handleValidateLicense(d.key || d.licenseKey, d.machine_id || d.machineId);
+    if (action === "activateLicense" && (d.machine_id || d.machineId)) return handleValidateLicense(d.key || d.licenseKey, d.machine_id || d.machineId);
     if (action === "requestTrial")    return handleRequestTrial(d);  // 🆕 Public trial
 
     // ── Reseller login ──
@@ -104,6 +104,9 @@ function doPost(e) {
 
     if (action === "createLicense")    return handleCreateLicense(d, null);
     if (action === "updateLicense")    return handleUpdateLicense(d);
+    if (action === "suspendLicense")   return handleSuspendLicense(d.id || d.license_key, "suspended");
+    if (action === "activateLicense")  return handleSuspendLicense(d.id || d.license_key, "active");
+    if (action === "regenerateKey")    return handleRegenerateKey(d.id || d.license_key);
     if (action === "deleteLicense")    return handleDeleteLicense(d.id || d.key);
     if (action === "resetDevices")     return handleResetDevices(d.key);
     if (action === "updatePin")        return handleUpdateAdminPin(d.new_pin);
@@ -495,6 +498,46 @@ function handleDeleteLicense(idOrKey) {
   return fail("License not found");
 }
 
+function handleSuspendLicense(idOrKey, newStatus) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName("Licenses");
+  if (!sh) return fail("Licenses sheet missing");
+  var rows = sh.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(idOrKey) || String(rows[i][1]) === String(idOrKey)) {
+      sh.getRange(i + 1, 11).setValue(newStatus); // column 11 = status
+      return ok({ message: "License " + newStatus, status: newStatus });
+    }
+  }
+  return fail("License not found");
+}
+
+function handleRegenerateKey(idOrKey) {
+  var ss  = SpreadsheetApp.getActiveSpreadsheet();
+  var sh  = ss.getSheetByName("Licenses");
+  var act = ss.getSheetByName("Activations");
+  if (!sh) return fail("Licenses sheet missing");
+  var rows = sh.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === String(idOrKey) || String(rows[i][1]) === String(idOrKey)) {
+      var newKey = generateKey();
+      var oldKey = rows[i][1];
+      sh.getRange(i + 1, 2).setValue(newKey); // column 2 = license_key
+      // Update Activations sheet with new key
+      if (act && act.getLastRow() > 1) {
+        var aData = act.getDataRange().getValues();
+        for (var j = 1; j < aData.length; j++) {
+          if (String(aData[j][1]) === String(oldKey)) {
+            act.getRange(j + 1, 2).setValue(newKey);
+          }
+        }
+      }
+      return ok({ message: "Key regenerated", old_key: oldKey, new_key: newKey });
+    }
+  }
+  return fail("License not found");
+}
+
 function handleResetDevices(key) {
   var ss  = SpreadsheetApp.getActiveSpreadsheet();
   var act = ss.getSheetByName("Activations");
@@ -522,11 +565,12 @@ function handleValidateLicense(key, machineId) {
   var act = ss.getSheetByName("Activations");
   if (!lic) return fail("Database not initialized");
 
-  var cleanKey = String(key).trim().toUpperCase();
+  var cleanKey = String(key).trim();
   var rows = lic.getDataRange().getValues();
   var row = null, rowIdx = -1;
   for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][1]).trim().toUpperCase() === cleanKey) { row = rows[i]; rowIdx = i + 1; break; }
+    var storedKey = String(rows[i][1]).trim();
+    if (storedKey === cleanKey || storedKey.toUpperCase() === cleanKey.toUpperCase()) { row = rows[i]; rowIdx = i + 1; break; }
   }
   if (!row) return ok({ valid: false, error: "License not found", error_code: "LICENSE_NOT_FOUND" });
 
@@ -555,7 +599,8 @@ function handleValidateLicense(key, machineId) {
     var aData  = act.getDataRange().getValues();
     var bound  = false, boundCnt = 0;
     for (var a = 1; a < aData.length; a++) {
-      if (String(aData[a][1]).trim().toUpperCase() === cleanKey) {
+      var actKey = String(aData[a][1]).trim();
+      if (actKey === cleanKey || actKey.toUpperCase() === cleanKey.toUpperCase()) {
         boundCnt++;
         var existingDev = String(aData[a][2]).trim().toUpperCase();
         var existingHex = existingDev.replace(/^USER-/, "").replace(/-/g, "");
@@ -567,7 +612,7 @@ function handleValidateLicense(key, machineId) {
     }
     if (!bound) {
       if (boundCnt >= maxDev) return ok({ valid: false, error: "Device limit reached (" + boundCnt + "/" + maxDev + ")", error_code: "MAX_DEVICES_REACHED" });
-      act.appendRow([Utilities.getUuid(), cleanKey, cleanMachineHex, custName, new Date().toISOString(), new Date().toISOString(), "1.0.0", "active"]);
+      act.appendRow([Utilities.getUuid(), (row ? row[1] : cleanKey), cleanMachineHex, custName, new Date().toISOString(), new Date().toISOString(), "1.0.0", "active"]);
       boundCnt++;
       lic.getRange(rowIdx, 13).setValue(boundCnt);
     }
@@ -802,13 +847,65 @@ function getSetting(key) {
 }
 
 function generateKey() {
-  function rh() {
-    return ("0000" + Math.floor(Math.random() * 65536).toString(16).toUpperCase()).slice(-4);
+  // ── Build a rich JSON payload ──────────────────────────────────────────────
+  var lid     = Utilities.getUuid();
+  var now     = Math.floor(Date.now() / 1000);
+  var exp     = now + 365 * 24 * 3600; // 1 year default, overridden at activation
+  var modules = [
+    "proxies","single-message","templates","contacts","bulk-messages",
+    "warmer","opt-out-management","auto-reply","chatbot","support-bot",
+    "ai-chatbot","call-responder","follow-up","recall-bot",
+    "group-grabber","manage-group","reports","devices","REST API",
+    "incoming-messages","live-chat"
+  ];
+  // Random padding string to allow exact length control
+  function randHex(len) {
+    var s = "";
+    var chars = "0123456789abcdef";
+    for (var i = 0; i < len; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+    return s;
   }
-  var p1 = rh(), p2 = rh(), p3 = rh();
-  var md5 = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, p1 + p2 + p3);
-  var ck  = md5.map(function(b) { var h = (b < 0 ? b + 256 : b).toString(16); return h.length === 1 ? "0" + h : h; }).join("").toUpperCase().substring(0, 4);
-  return "LW-" + p1 + "-" + p2 + "-" + p3 + "-" + ck;
+  var payload = {
+    v: 2,
+    lid: lid,
+    name: "client",
+    mobile: "",
+    plan: "pro",
+    max_devices: 1,
+    max_tg_accounts: 10,
+    modules: modules,
+    issued: now,
+    exp: exp,
+    mb: null,
+    ci: null,
+    n: randHex(32)
+  };
+  var payloadStr = JSON.stringify(payload);
+
+  // ── Sign with HMAC-SHA256 ──────────────────────────────────────────────────
+  var secret = "WAGROW-ADMIN-LICENSE-SECRET-2025-ULTRA-SECURE-XYZ789";
+  var sigBytes = Utilities.computeHmacSha256Signature(payloadStr, secret);
+  var sigHex = sigBytes.map(function(b) {
+    var h = (b < 0 ? b + 256 : b).toString(16);
+    return h.length === 1 ? "0" + h : h;
+  }).join("");
+
+  // ── Base64 encode payload + signature ────────────────────────────────────
+  var encoded = Utilities.base64EncodeWebSafe(payloadStr) + "." + sigHex;
+
+  // ── Target: 1061 chars total (including "LW-" prefix and "." separator) ──
+  // "LW-" = 3 chars, then encoded content. We pad with extra random hex.
+  var TARGET_LEN = 1061;
+  var PREFIX = "LW-";
+  var current = PREFIX.length + encoded.length;
+  if (current < TARGET_LEN) {
+    encoded = encoded + "." + randHex(TARGET_LEN - current - 1);
+  } else if (current > TARGET_LEN) {
+    // Trim from the hex tail (safe — signature is before the dot padding)
+    encoded = encoded.substring(0, TARGET_LEN - PREFIX.length);
+  }
+
+  return PREFIX + encoded;
 }
 
 // ─── TRIAL SYSTEM ─────────────────────────────────────────────────────────────

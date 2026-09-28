@@ -11,7 +11,7 @@ const STORAGE = {
   ROLE:          'wg_role',
 };
 
-const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbynPdf4uikZeryEdTVTm8Ymc26CtSwLzvGZ7QuVCxVENotWhy_lUM7TES2XTd4JMe4/exec';
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyE_YnEJhprDTucI4d2KK8XHMiidxENrF_9WfrAgzlb9oNjUaV5mfTpMzBjMveTJWo/exec';
 
 export const auth = {
   getApiUrl: () => {
@@ -173,6 +173,9 @@ export const api = {
   updateLicense: (d) => call('updateLicense', d),
   deleteLicense: (id) => call('deleteLicense', { id }),
   resetDevices:  (key) => call('resetDevices', { key }),
+  suspendLicense:   (id, key) => call('suspendLicense',  { id, license_key: key }),
+  activateLicense:  (id, key) => call('activateLicense', { id, license_key: key }),
+  regenerateKey:    (id, key) => call('regenerateKey',   { id, license_key: key }),
   getActivations:(key) => call('getActivations', { key }, 'GET'),
 
   // ── Earnings

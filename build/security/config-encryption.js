@@ -214,7 +214,7 @@ class ConfigEncryption {
         support_phone: null
       },
       LICENSE_SERVER: {
-        base_url: "https://license.getleadwave.in",
+        base_url: "",
         api_version: "v1"
       },
       APP_BRANDING: {

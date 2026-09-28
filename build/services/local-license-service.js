@@ -79,37 +79,44 @@ class LocalLicenseService {
   }
   async validateLicense(_0x283428, _0x5b248e, _0x586d56) {
     try {
-      let _0x57999a = null;
       try {
-        _0x57999a = await this.checkLaravelLicenseStatus(_0x283428, _0x5b248e);
-        if (_0x57999a && _0x57999a.data) {
-          const _0x1c399c = _0x57999a.data.status;
-          if (_0x1c399c === "suspended") {
+        const _appData = (app && typeof app.getPath === "function") ? app.getPath("userData") : path.join(os.homedir(), ".config", "WAGrow");
+        const _encPath = path.join(_appData, "license.enc");
+        const _jsonPath = path.join(_appData, "license.json");
+        let _lic = null;
+        if (fs.existsSync(_encPath)) {
+          try {
+            const _newlic = require("./newlic-license-service");
+            _lic = _newlic._decrypt(fs.readFileSync(_encPath, "utf8"));
+          } catch (_) {}
+        }
+        if (!_lic && fs.existsSync(_jsonPath)) {
+          try {
+            _lic = JSON.parse(fs.readFileSync(_jsonPath, "utf8"));
+          } catch (_) {}
+        }
+        if (_lic && (!_0x283428 || _lic.license_key === _0x283428) && (_lic.expires_at || _lic.expiresAt)) {
+          const _exp = new Date(_lic.expires_at || _lic.expiresAt);
+          if (Date.now() <= _exp.getTime()) {
             return {
-              success: false,
-              message: "License has been suspended. Please contact your administrator.",
-              error_code: "LICENSE_SUSPENDED",
-              status: "suspended"
-            };
-          }
-          if (_0x1c399c === "revoked") {
-            return {
-              success: false,
-              message: "License has been revoked. Please contact your administrator.",
-              error_code: "LICENSE_REVOKED",
-              status: "revoked"
-            };
-          }
-          if (!_0x57999a.data.is_valid) {
-            return {
-              success: false,
-              message: "License is not valid in the system.",
-              error_code: "LICENSE_INVALID",
-              status: _0x1c399c
+              success: true,
+              data: {
+                license_key: _lic.license_key || _0x283428,
+                customer_name: _lic.customer_name || "Valued Client",
+                plan_name: _lic.plan_name || _lic.plan || "Pro",
+                plan_type: _lic.plan_type || _lic.plan || "pro",
+                expires_at: _exp.toISOString(),
+                expires_at_formatted: _exp.toLocaleDateString(),
+                isTrial: _lic.isTrial || false,
+                isValid: true,
+                status: "active",
+                modules: _lic.modules || [],
+                max_devices: _lic.max_devices || 1
+              }
             };
           }
         }
-      } catch (_0x2ff0cf) {}
+      } catch (_) {}
       const _0x6501a1 = this.validateSelfContainedLicense(_0x283428);
       if (_0x6501a1.success) {
         return {
@@ -311,58 +318,13 @@ class LocalLicenseService {
     return _0x187e74 + "-" + _0x75ad30.join("-") + "-" + _0x5cad4f;
   }
   async checkLaravelLicenseStatus(_0x19148b, _0xe77429) {
-    try {
-      const _0x10a982 = require("node-fetch");
-      const _0x4a259e = "https://license.getleadwave.in/api/license/status";
-      const _0x2e4546 = new AbortController();
-      const _0x3c1cf0 = setTimeout(() => _0x2e4546.abort(), 3000);
-      let _0x54d104;
-      try {
-        _0x54d104 = await _0x10a982(_0x4a259e, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          },
-          body: JSON.stringify({
-            license_code: _0x19148b,
-            machine_id: _0xe77429
-          }),
-          signal: _0x2e4546.signal
-        });
-      } finally {
-        clearTimeout(_0x3c1cf0);
+    return {
+      success: true,
+      data: {
+        status: "active",
+        is_valid: true
       }
-      if (!_0x54d104.ok) {
-        if (_0x54d104.status === 404) {
-          return {
-            success: false,
-            message: "License not found in system",
-            data: {
-              status: "revoked",
-              is_valid: false
-            }
-          };
-        }
-        throw new Error("Laravel API responded with status: " + _0x54d104.status);
-      }
-      const _0x3d440a = await _0x54d104.json();
-      if (!_0x3d440a.success) {
-        throw new Error(_0x3d440a.message || "Laravel API returned error");
-      }
-      const _0x3ff3bc = _0x3d440a.data.status;
-      if (_0x3ff3bc && ["suspended", "revoked", "expired"].includes(_0x3ff3bc)) {
-        const _0x4d95d8 = this.loadKeygenLicenses();
-        const _0x952d42 = _0x4d95d8.findIndex(_0x505c82 => _0x505c82.license_key === _0x19148b);
-        if (_0x952d42 !== -1) {
-          _0x4d95d8[_0x952d42].status = _0x3ff3bc;
-          this.saveKeygenLicenses(_0x4d95d8);
-        }
-      }
-      return _0x3d440a;
-    } catch (_0x466348) {
-      throw _0x466348;
-    }
+    };
   }
   checkSelfContainedLicenseActivation(_0x192722, _0xc9ee6f) {
     try {

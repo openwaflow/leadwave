@@ -1,19 +1,40 @@
 import React, { useState } from 'react';
+import {
+  Settings,
+  Save,
+  Server,
+  KeyRound,
+  Copy,
+  Check,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  Zap,
+  Lock
+} from 'lucide-react';
 import { apiConfig, api } from '../services/api';
 
-export default function SettingsModal({ isOpen, onClose, onSettingsUpdated }) {
+export default function SettingsModal({ isOpen = true, onClose, onSettingsUpdated }) {
   const [apiUrl, setApiUrl] = useState(apiConfig.getApiUrl());
   const [newPin, setNewPin] = useState('');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
 
-  if (!isOpen) return null;
+  if (isOpen === false) return null;
+
+  const clientIntegrationCode = `// WAGrow Desktop App License API Integration
+// Set in: reseller-config.json
+{
+  "app_name": "WAGrow",
+  "version": "1.0.0",
+  "license_api_url": "${apiUrl}"
+}`;
 
   const handleSaveUrl = () => {
     apiConfig.setApiUrl(apiUrl);
-    alert('API URL saved to browser storage!');
-    onSettingsUpdated();
+    alert('API URL saved to browser storage successfully!');
+    if (onSettingsUpdated) onSettingsUpdated();
   };
 
   const handleTestConnection = async () => {
@@ -22,7 +43,7 @@ export default function SettingsModal({ isOpen, onClose, onSettingsUpdated }) {
     try {
       const res = await api.pingServer(apiUrl);
       if (res && res.success) {
-        setTestResult({ success: true, message: 'Connected successfully to Cloud Server!' });
+        setTestResult({ success: true, message: 'Connected successfully to Google Apps Script cloud server!' });
       } else {
         setTestResult({ success: false, message: 'Response received but test failed.' });
       }
@@ -41,19 +62,16 @@ export default function SettingsModal({ isOpen, onClose, onSettingsUpdated }) {
     }
     try {
       const res = await api.updatePin(newPin);
-      if (res.success) {
+      if (res?.success) {
         alert('Admin PIN updated successfully!');
         setNewPin('');
       } else {
-        alert('Failed to update PIN: ' + res.error);
+        alert('Failed to update PIN: ' + (res?.error || 'Unknown error'));
       }
     } catch (err) {
       alert('Error updating PIN: ' + err.message);
     }
   };
-
-  const clientIntegrationCode = `// In WAGrow Desktop App (reseller-config.json or env):
-GAS_API_URL="${apiUrl || ''}"`;
 
   const handleCopySnippet = () => {
     navigator.clipboard.writeText(clientIntegrationCode);
@@ -69,18 +87,18 @@ GAS_API_URL="${apiUrl || ''}"`;
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              </svg>
+              <Settings className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-bold text-lg text-white">System Settings</h3>
-              <p className="text-xs text-slate-400">System API & Security</p>
+              <p className="text-xs text-slate-400">System API &amp; Security</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
-            ✕
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -88,14 +106,17 @@ GAS_API_URL="${apiUrl || ''}"`;
           
           {/* Section 1: Backend Execution URL */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-sm text-white flex items-center gap-2">
-              <span>Cloud Backend API Execution URL</span>
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-sm text-white flex items-center gap-2">
+                <Server className="w-4 h-4 text-cyan-400" />
+                <span>Cloud Backend API Execution URL</span>
+              </h4>
               <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
-                Cloud Server
+                v1.0.0
               </span>
-            </h4>
+            </div>
             <p className="text-xs text-slate-400">
-              Enter your backend execution URL below:
+              Enter the Google Apps Script Web App Deployment URL:
             </p>
             <div className="flex gap-2">
               <input
@@ -108,9 +129,10 @@ GAS_API_URL="${apiUrl || ''}"`;
               <button
                 type="button"
                 onClick={handleSaveUrl}
-                className="btn-primary text-xs whitespace-nowrap"
+                className="btn-primary text-xs whitespace-nowrap flex items-center gap-1.5"
               >
-                Save URL
+                <Save className="w-3.5 h-3.5" />
+                <span>Save</span>
               </button>
             </div>
 
@@ -119,26 +141,31 @@ GAS_API_URL="${apiUrl || ''}"`;
                 type="button"
                 onClick={handleTestConnection}
                 disabled={testing || !apiUrl}
-                className="btn-secondary text-xs py-1.5 px-3"
+                className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
               >
-                {testing ? 'Testing...' : '⚡ Test Connection'}
+                <Zap className={`w-3.5 h-3.5 ${testing ? 'animate-spin' : 'text-amber-400'}`} />
+                <span>{testing ? 'Testing...' : 'Test Connection'}</span>
               </button>
               {testResult && (
-                <span className={`text-xs font-semibold ${testResult.success ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {testResult.message}
-                </span>
+                <div className={`text-xs font-semibold flex items-center gap-1.5 ${testResult.success ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {testResult.success ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                  <span>{testResult.message}</span>
+                </div>
               )}
             </div>
           </div>
 
           {/* Section 2: Update Admin PIN */}
           <div className="space-y-3 pt-4 border-t border-slate-800">
-            <h4 className="font-semibold text-sm text-white">Change Admin PIN</h4>
+            <h4 className="font-semibold text-sm text-white flex items-center gap-2">
+              <Lock className="w-4 h-4 text-amber-400" />
+              <span>Change Admin PIN</span>
+            </h4>
             <form onSubmit={handleUpdatePin} className="flex gap-2">
               <input
                 type="password"
                 maxLength="8"
-                className="glass-input text-xs"
+                className="glass-input text-xs font-mono"
                 placeholder="Enter new 4-8 digit PIN"
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value)}
@@ -152,12 +179,20 @@ GAS_API_URL="${apiUrl || ''}"`;
           {/* Section 3: Desktop App Integration */}
           <div className="space-y-2 pt-4 border-t border-slate-800">
             <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-sm text-white">WAGrow Desktop App Link</h4>
-              <button onClick={handleCopySnippet} className="text-xs text-cyan-400 hover:underline">
-                {copiedSnippet ? 'Copied! ✓' : 'Copy Env'}
+              <h4 className="font-semibold text-sm text-white flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-indigo-400" />
+                <span>WAGrow Desktop App Config</span>
+              </h4>
+              <button
+                type="button"
+                onClick={handleCopySnippet}
+                className="text-xs text-cyan-400 hover:underline flex items-center gap-1"
+              >
+                {copiedSnippet ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedSnippet ? 'Copied!' : 'Copy Config'}</span>
               </button>
             </div>
-            <pre className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-[11px] mono-text text-slate-300 overflow-x-auto">
+            <pre className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-[11px] mono-text text-slate-300 overflow-x-auto leading-relaxed">
               {clientIntegrationCode}
             </pre>
           </div>

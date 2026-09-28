@@ -1,4 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import {
+  TrendingUp,
+  DollarSign,
+  Download,
+  RefreshCw,
+  Search,
+  Users,
+  ShieldCheck,
+  KeyRound,
+  Calendar,
+  Building2,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { api } from '../services/api';
 
 const fmt = (n, cur = '₹') => `${cur}${(parseFloat(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -90,8 +104,8 @@ export default function EarningsPage({ isReseller }) {
       {/* Title & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-            <span>💰</span>
+          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5">
+            <TrendingUp className="w-6 h-6 text-emerald-400" />
             <span>{isReseller ? 'My Commission & Sales History' : 'Revenue & Commission Analytics'}</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
@@ -102,17 +116,18 @@ export default function EarningsPage({ isReseller }) {
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <button
             onClick={exportCSV}
-            className="btn-secondary text-xs py-2 px-3"
+            className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5"
             title="Download CSV report"
           >
-            <span>📥 Export CSV</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
           </button>
           <button
             onClick={loadData}
             className="btn-secondary text-xs p-2.5"
             title="Refresh Ledger"
           >
-            <span className={loading ? 'animate-spin inline-block' : ''}>🔄</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -121,13 +136,13 @@ export default function EarningsPage({ isReseller }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           {
-            label: isReseller ? 'My Total Sales' : 'Gross Revenue (Total Kamai)',
+            label: isReseller ? 'My Total Sales' : 'Gross Revenue',
             value: fmt(data?.summary?.total, currency),
             sub: `${data?.summary?.count ?? 0} total transactions`,
             color: 'text-emerald-400',
             border: 'border-emerald-500/25',
             bg: 'bg-emerald-500/5',
-            icon: '💵'
+            icon: DollarSign
           },
           {
             label: isReseller ? 'Earned Commission' : 'Reseller Commissions',
@@ -136,16 +151,16 @@ export default function EarningsPage({ isReseller }) {
             color: 'text-indigo-400',
             border: 'border-indigo-500/25',
             bg: 'bg-indigo-500/5',
-            icon: '🤝'
+            icon: Users
           },
           {
-            label: isReseller ? 'Paid Out Balance' : 'Net Admin Profit (Shuddh Munafa)',
+            label: isReseller ? 'Paid Out Balance' : 'Net Admin Profit',
             value: fmt(data?.summary?.net, currency),
             sub: isReseller ? 'Settled to your account' : 'After all commissions',
             color: 'text-cyan-400',
             border: 'border-cyan-500/25',
             bg: 'bg-cyan-500/5',
-            icon: '💎'
+            icon: ShieldCheck
           },
           {
             label: 'Keys Activated',
@@ -154,20 +169,23 @@ export default function EarningsPage({ isReseller }) {
             color: 'text-amber-400',
             border: 'border-amber-500/25',
             bg: 'bg-amber-500/5',
-            icon: '🔑'
+            icon: KeyRound
           }
-        ].map((c, i) => (
-          <div key={i} className={`glass-panel p-4 sm:p-5 rounded-2xl border ${c.border} ${c.bg}`}>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{c.label}</span>
-              <span className="text-xl">{c.icon}</span>
+        ].map((c, i) => {
+          const Icon = c.icon;
+          return (
+            <div key={i} className={`glass-panel p-4 sm:p-5 rounded-2xl border ${c.border} ${c.bg}`}>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{c.label}</span>
+                <Icon className={`w-4 h-4 ${c.color}`} />
+              </div>
+              <div className={`text-2xl sm:text-3xl font-black font-mono mt-2 ${c.color}`}>
+                {loading ? '...' : c.value}
+              </div>
+              <div className="text-[11px] text-slate-500 mt-1">{c.sub}</div>
             </div>
-            <div className={`text-2xl sm:text-3xl font-black font-mono mt-2 ${c.color}`}>
-              {loading ? '...' : c.value}
-            </div>
-            <div className="text-[11px] text-slate-500 mt-1">{c.sub}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Filter Toolbar */}
@@ -206,7 +224,7 @@ export default function EarningsPage({ isReseller }) {
 
           {/* Search */}
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               className="glass-input pl-8 text-xs"
@@ -247,7 +265,7 @@ export default function EarningsPage({ isReseller }) {
                 <tr>
                   <td colSpan={isReseller ? 6 : 7} className="py-12 text-center">
                     <div className="max-w-xs mx-auto text-slate-400">
-                      <span className="text-3xl block mb-2">💰</span>
+                      <TrendingUp className="w-8 h-8 mx-auto text-slate-600 mb-2" />
                       <p className="font-bold text-white text-sm">No transaction records found</p>
                       <p className="text-xs text-slate-500 mt-1">
                         When paid licenses are generated, sales and commissions automatically log here.
@@ -270,8 +288,10 @@ export default function EarningsPage({ isReseller }) {
 
                       {/* License Key */}
                       <td className="py-3.5 px-4">
-                        <code className="font-mono text-xs text-emerald-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 select-all">
-                          {item.license_key}
+                        <code className="font-mono text-xs text-emerald-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 select-all max-w-[130px] truncate block" title={item.license_key}>
+                          {item.license_key && item.license_key.length > 20
+                            ? `${item.license_key.substring(0, 14)}...`
+                            : item.license_key}
                         </code>
                       </td>
 
@@ -289,8 +309,8 @@ export default function EarningsPage({ isReseller }) {
                       {!isReseller && (
                         <td className="py-3.5 px-4">
                           {item.reseller_name ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-indigo-300 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded">
-                              <span>🏪</span>
+                            <span className="inline-flex items-center gap-1.5 text-xs text-indigo-300 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded">
+                              <Users className="w-3 h-3 text-indigo-400" />
                               <span>{item.reseller_name}</span>
                             </span>
                           ) : (
@@ -337,19 +357,19 @@ export default function EarningsPage({ isReseller }) {
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => p - 1)}
-                className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
+                className="p-1 rounded bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
               >
-                Prev
+                <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="px-2 font-mono text-white">
+              <span className="px-2 font-mono text-white text-xs">
                 {page} / {totalPages}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => p + 1)}
-                className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
+                className="p-1 rounded bg-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
               >
-                Next
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}

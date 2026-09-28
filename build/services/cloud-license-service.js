@@ -7,7 +7,7 @@ const {
 } = require("electron");
 class CloudLicenseService {
   constructor() {
-    this.apiBaseUrl = "https://license.getleadwave.in/api";
+    this.apiBaseUrl = "";
     this.heartbeatInterval = 300000;
     this.gracePeriod = 86400000;
     this.heartbeatTimer = null;

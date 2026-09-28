@@ -1,4 +1,19 @@
 import React, { useState } from 'react';
+import {
+  KeyRound,
+  CheckCircle2,
+  Copy,
+  Check,
+  MessageSquare,
+  X,
+  Laptop,
+  Shield,
+  User,
+  Phone,
+  Mail,
+  Calendar,
+  Sparkles
+} from 'lucide-react';
 
 export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
   const [formData, setFormData] = useState({
@@ -22,7 +37,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.user_code || !formData.user_code.trim()) {
-      alert('Device ID / User Code is required! Please enter the customer’s Device Code from their WAGrow app.');
+      alert('Device ID / User Code is required. Please enter the customer’s Device Code from their WAGrow app.');
       return;
     }
     setLoading(true);
@@ -51,15 +66,14 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
     const cleanPhone = String(formData.mobile || '').replace(/[^0-9]/g, '');
     const userCodeText = createdResult.user_code || formData.user_code;
     const msg = encodeURIComponent(
-      `🎉 Hello ${formData.customer_name},\n\n` +
+      `Hello ${formData.customer_name},\n\n` +
       `Your WAGrow WhatsApp CRM License is ready!\n\n` +
-      `🔑 License Key: ${createdResult.license_key}\n` +
-      `💻 Device ID: ${userCodeText}\n` +
-      `📦 Plan: ${formData.plan_type}\n` +
-      `⏳ Valid Till: ${new Date(createdResult.expires_at).toLocaleDateString()}\n` +
-      `👥 Allowed Devices: ${formData.max_devices}\n\n` +
-      `Download App: https://github.com/openwaflow/leadwave/releases\n\n` +
-      `Thank you for choosing WAGrow CRM! 🚀`
+      `License Key:\n${createdResult.license_key}\n\n` +
+      `Device ID: ${userCodeText}\n` +
+      `Plan: ${formData.plan_type}\n` +
+      `Valid Till: ${new Date(createdResult.expires_at).toLocaleDateString()}\n` +
+      `Allowed Devices: ${formData.max_devices}\n\n` +
+      `Thank you for choosing WAGrow CRM!`
     );
     return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${msg}`;
   };
@@ -82,65 +96,77 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
 
   return (
     <div className="modal-backdrop">
-      <div className="modal-content">
+      <div className="modal-content max-w-xl">
         
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-              </svg>
+              <KeyRound className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-bold text-lg text-white">Generate License Key</h3>
-              <p className="text-xs text-slate-400">Issue an authentic WAGrow software license</p>
+              <p className="text-xs text-slate-400">Issue an authentic WAGrow 1061-character signed license</p>
             </div>
           </div>
           <button
             onClick={handleResetAndClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
         {createdResult ? (
           /* Success Screen */
-          <div className="p-6 space-y-5 text-center">
-            <div className="h-16 w-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
+          <div className="p-6 space-y-5">
+            <div className="text-center">
+              <div className="h-14 w-14 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-7 h-7" />
+              </div>
+              <h4 className="font-bold text-xl text-white">License Generated Successfully!</h4>
+              <p className="text-xs text-slate-400 mt-1">Saved securely to cloud database and signed with HMAC-SHA256</p>
             </div>
 
-            <div>
-              <h4 className="font-bold text-xl text-white">License Generated!</h4>
-              <p className="text-sm text-slate-400 mt-1">Saved securely to cloud database</p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-left space-y-2">
-              <p className="text-xs text-slate-400 font-semibold uppercase">License Key</p>
-              <div className="flex items-center justify-between gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                <span className="mono-text font-bold text-emerald-400 text-sm tracking-wide">
-                  {createdResult.license_key}
-                </span>
+            {/* License Key Box */}
+            <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">License Key</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    {createdResult.license_key ? `${createdResult.license_key.length} / 1061 Chars` : 'Signed Key'}
+                  </span>
+                </div>
                 <button
                   onClick={handleCopy}
-                  className="btn-secondary text-xs py-1.5 px-3"
+                  className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1.5"
                 >
-                  {copied ? 'Copied! ✓' : 'Copy'}
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied ? 'Copied!' : 'Copy Key'}</span>
                 </button>
               </div>
-              <div className="text-xs text-slate-400 pt-2 flex flex-col gap-1.5 border-t border-slate-800/80">
-                <div className="flex justify-between">
-                  <span>Client: <strong className="text-slate-200">{createdResult.customer_name}</strong></span>
-                  <span>Plan: <strong className="text-slate-200">{createdResult.plan_type}</strong></span>
+
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 max-h-32 overflow-y-auto">
+                <code className="text-xs font-mono text-emerald-400 break-all select-all leading-relaxed block">
+                  {createdResult.license_key}
+                </code>
+              </div>
+
+              <div className="text-xs text-slate-400 pt-2 flex flex-col gap-2 border-t border-slate-800/80">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Client:</span>
+                  <strong className="text-white font-medium">{createdResult.customer_name}</strong>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span>Device Bound:</span>
-                  <span className="mono-text font-semibold text-emerald-400 text-xs bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  <span className="text-slate-400">Plan Tier:</span>
+                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                    {createdResult.plan_type}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Hardware Bound:</span>
+                  <span className="font-mono font-bold text-emerald-400 text-xs bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                     {createdResult.user_code || formData.user_code}
                   </span>
                 </div>
@@ -153,16 +179,17 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
                   href={getWhatsAppShareUrl()}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn-primary flex-1 justify-center bg-gradient-to-r from-emerald-600 to-green-600"
+                  className="btn-primary flex-1 justify-center bg-gradient-to-r from-emerald-600 to-teal-600"
                 >
-                  <span>Share on WhatsApp 💬</span>
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Share on WhatsApp</span>
                 </a>
               )}
               <button
                 onClick={handleResetAndClose}
                 className="btn-secondary flex-1 justify-center"
               >
-                Done
+                Close
               </button>
             </div>
           </div>
@@ -202,7 +229,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
                 onChange={(e) => setFormData({ ...formData, user_code: e.target.value.trim().toUpperCase() })}
               />
               <p className="text-[11px] text-slate-500 mt-1">
-                Client PC ka Device Code daalein. Bina Device ID ke license dusre PC par kaam nahi karega.
+                Enter the customer's machine ID. License will be locked to this hardware.
               </p>
             </div>
 
@@ -210,7 +237,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  WhatsApp Number (with Country Code)
+                  WhatsApp Number
                 </label>
                 <input
                   type="text"
@@ -276,7 +303,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Max Allowed PCs / Devices
+                  Max Allowed PCs
                 </label>
                 <select
                   className="glass-input"
@@ -293,7 +320,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Sale Price (₹) <span style={{ color: '#10b981', fontSize: '10px' }}>for commission tracking</span>
+                  Sale Price (₹)
                 </label>
                 <input
                   type="number"
@@ -313,7 +340,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
               <input
                 type="text"
                 className="glass-input"
-                placeholder="e.g. Paid via UPI, Referral from Amit"
+                placeholder="e.g. Paid via UPI, Referral from partner"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
@@ -333,7 +360,7 @@ export default function GenerateLicenseModal({ isOpen, onClose, onCreated }) {
                 disabled={loading}
                 className="btn-primary"
               >
-                {loading ? 'Generating...' : 'Generate & Save License'}
+                {loading ? 'Generating 1061-char Key...' : 'Generate & Save License'}
               </button>
             </div>
 
